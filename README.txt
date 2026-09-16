@@ -14,8 +14,7 @@ mkdir driver-checkin
 cd driver-checkin
 npm install <-- for dependencies
 npm start <-- to start
-npm stop  <-- to stop
-npm restart <--to restart
+
 
 Then open:
 http://localhost:8000/index.html <-- changed it to your local ipv4. edit this in server.js
