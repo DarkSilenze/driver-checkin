@@ -545,36 +545,37 @@
       return result.drivers || [];
     }
 
-    function buildItemHTML(row) {
-      var orderNum = row.Order !== undefined ? row.Order : (row.order || '');
-      var checkinTime = row.checkin_time || '';
-      var carrier = row.carrier || '';
+function buildItemHTML(row) {
+  var orderNum = row.Order !== undefined ? row.Order : (row.order || '');
+  var checkinTime = row.checkin_time || '';
+  var carrier = row.carrier || '';
+  var trailer = row.trailer || '';
 
-      var checkinBadge = checkinTime
-        ? '<span class="time-badge checkin-time-badge"><span class="badge-icon">✅</span> <span class="badge-label">Check-in Time:</span> ' + escapeHtml(checkinTime) + '</span>'
-        : '<span class="time-badge checkin-time-badge"><span class="badge-icon">✅</span> <span class="badge-label">Check-in Time:</span> —</span>';
+  var checkinBadge = checkinTime
+    ? '<span class="time-badge checkin-time-badge"><span class="badge-icon">✅</span> <span class="badge-label">Check-in Time:</span> ' + escapeHtml(checkinTime) + '</span>'
+    : '<span class="time-badge checkin-time-badge"><span class="badge-icon">✅</span> <span class="badge-label">Check-in Time:</span> —</span>';
 
-      var carrierLine = carrier
-        ? '<span>🏢 ' + escapeHtml(carrier) + '</span>'
-        : '<span>🏢 —</span>';
+  var carrierLine  = carrier ? '<span>🏢 ' + escapeHtml(carrier) + '</span>' : '<span>🏢 —</span>';
+  var trailerLine  = trailer ? '<span>🚚 Trailer #: ' + escapeHtml(trailer) + '</span>' : '<span>🚚 Trailer #: —</span>';
 
-      return '' +
-        '<div class="checkin-item" data-id="' + row.id + '">' +
-          '<button class="remove-btn" onclick="requestRemove(' + row.id + ')" title="Remove driver" aria-label="Remove driver">✕</button>' +
-          '<div class="checkin-avatar">' + getInitials(row.driver_name) + '</div>' +
-          '<div class="checkin-info">' +
-            '<div class="checkin-order">#' + escapeHtml(orderNum) + '</div>' +
-            '<div class="checkin-name">' + escapeHtml(row.driver_name) + '</div>' +
-            '<div class="checkin-meta">' +
-              carrierLine +
-              '<span>📞 ' + escapeHtml(row.phone) + '</span>' +
-              '<span>📍 ' + escapeHtml(row.destination) + '</span>' +
-              '<span>📅 ' + escapeHtml(row.checkin_date || '') + '</span>' +
-            '</div>' +
-          '</div>' +
-          '<div class="checkin-times">' + checkinBadge + '</div>' +
-        '</div>';
-    }
+  return '' +
+    '<div class="checkin-item" data-id="' + row.id + '">' +
+      '<button class="remove-btn" onclick="requestRemove(' + row.id + ')" title="Remove driver" aria-label="Remove driver">✕</button>' +
+      '<div class="checkin-avatar">' + getInitials(row.driver_name) + '</div>' +
+      '<div class="checkin-info">' +
+        '<div class="checkin-order">#' + escapeHtml(orderNum) + '</div>' +
+        '<div class="checkin-name">' + escapeHtml(row.driver_name) + '</div>' +
+        '<div class="checkin-meta">' +
+          carrierLine +
+          trailerLine +
+          '<span>📞 ' + escapeHtml(row.phone) + '</span>' +
+          '<span>📍 ' + escapeHtml(row.destination) + '</span>' +
+          '<span>📅 ' + escapeHtml(row.checkin_date || '') + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="checkin-times">' + checkinBadge + '</div>' +
+    '</div>';
+}
 
     async function renderList() {
       if (isLoading) return;

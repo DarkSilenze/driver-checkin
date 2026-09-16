@@ -20,6 +20,7 @@ db.exec(`
     "Order" TEXT NOT NULL,
     driver_name TEXT NOT NULL,
     carrier TEXT NOT NULL DEFAULT '',
+    trailer TEXT NOT NULL DEFAULT '',
     phone TEXT NOT NULL,
     destination TEXT NOT NULL,
     checkin_date TEXT NOT NULL,
@@ -91,7 +92,6 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// Purge expired sessions periodically
 setInterval(function() {
   const now = new Date().toISOString();
   db.prepare(`DELETE FROM sessions WHERE expires_at < ?`).run(now);
@@ -146,7 +146,6 @@ app.post('/api/pin/change', requireAuth, (req, res) => {
 
     db.prepare(`UPDATE settings SET value = ? WHERE key = 'pin'`).run(String(newPin));
 
-    // Invalidate all other sessions so a leaked token can't outlive the PIN
     const header = req.headers['authorization'] || '';
     const currentToken = header.startsWith('Bearer ') ? header.slice(7) : null;
     if (currentToken) {
@@ -311,9 +310,12 @@ app.delete('/api/orders/:order', requireAuth, (req, res) => {
 // ═════════════════════════════════════════
 
 app.post('/api/check-in', (req, res) => {
-  const { Order, driver_name, carrier, phone, destination, checkin_date, checkin_time } = req.body;
+  const {
+    Order, driver_name, carrier, trailer, phone, destination,
+    checkin_date, checkin_time
+  } = req.body;
 
-  if (!Order || !driver_name || !carrier || !phone || !destination || !checkin_date || !checkin_time) {
+  if (!Order || !driver_name || !carrier || !trailer || !phone || !destination || !checkin_date || !checkin_time) {
     return res.status(400).json({ error: 'All fields are required.' });
   }
 
@@ -339,12 +341,13 @@ app.post('/api/check-in', (req, res) => {
 
       db.prepare(`
         INSERT INTO drivers
-          ("Order", driver_name, carrier, phone, destination, checkin_date, checkin_time)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+          ("Order", driver_name, carrier, trailer, phone, destination, checkin_date, checkin_time)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         orderNum,
         String(driver_name).trim(),
         String(carrier).trim(),
+        String(trailer).trim(),
         String(phone).trim(),
         String(destination).trim(),
         String(checkin_date).trim(),
@@ -372,6 +375,7 @@ app.get('/api/drivers', (req, res) => {
         d."Order",
         d.driver_name,
         d.carrier,
+        d.trailer,
         d.phone,
         d.destination,
         d.checkin_date,
@@ -393,6 +397,30 @@ app.get('/api/drivers', (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────
+//  CLEAR ALL DRIVERS (must be BEFORE /:id)
+// ─────────────────────────────────────────
+app.delete('/api/drivers', requireAuth, (req, res) => {
+  try {
+    const clearAll = db.transaction(() => {
+      const rows = db.prepare(`SELECT DISTINCT "Order" FROM drivers`).all();
+      db.prepare('DELETE FROM drivers').run();
+      const delOrder = db.prepare(`DELETE FROM orders WHERE CAST("Order" AS TEXT) = ?`);
+      for (const row of rows) delOrder.run(String(row.Order));
+      return rows.length;
+    });
+
+    const count = clearAll();
+    res.json({ success: true, deletedOrders: count });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Unable to clear drivers.' });
+  }
+});
+
+// ─────────────────────────────────────────
+//  REMOVE ONE DRIVER (param route — after the bulk one)
+// ─────────────────────────────────────────
 app.delete('/api/drivers/:id', requireAuth, (req, res) => {
   try {
     const removeOne = db.transaction((id) => {
@@ -418,21 +446,17 @@ app.delete('/api/drivers/:id', requireAuth, (req, res) => {
   }
 });
 
-app.delete('/api/drivers', requireAuth, (req, res) => {
+// ─────────────────────────────────────────
+//  REMOVE ALL ORDERS (drivers untouched)
+// ─────────────────────────────────────────
+app.delete('/api/orders', requireAuth, (req, res) => {
   try {
-    const clearAll = db.transaction(() => {
-      const rows = db.prepare(`SELECT DISTINCT "Order" FROM drivers`).all();
-      db.prepare('DELETE FROM drivers').run();
-      const delOrder = db.prepare(`DELETE FROM orders WHERE CAST("Order" AS TEXT) = ?`);
-      for (const row of rows) delOrder.run(String(row.Order));
-      return rows.length;
-    });
-
-    const count = clearAll();
+    const count = db.prepare(`SELECT COUNT(*) AS c FROM orders`).get().c;
+    db.prepare(`DELETE FROM orders`).run();
     res.json({ success: true, deletedOrders: count });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Unable to clear drivers.' });
+    res.status(500).json({ error: 'Unable to remove all orders.' });
   }
 });
 
@@ -440,5 +464,5 @@ app.delete('/api/drivers', requireAuth, (req, res) => {
 //  START
 // ═════════════════════════════════════════
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Local driver check-in app running at http://192.168.1.222:${PORT}`);       // change to your own desire assigned ipv4
+  console.log(`Local driver check-in app running at http://192.168.1.222:${PORT}`);
 });

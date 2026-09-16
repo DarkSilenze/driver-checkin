@@ -293,6 +293,11 @@
         </div>
 
         <div class="form-group full-width">
+          <label for="trailer">Trailer # <span class="required-star">*</span></label>
+          <input type="text" id="trailer" required autocomplete="off">
+        </div>
+
+        <div class="form-group full-width">
           <label for="phoneNumber">Phone number <span class="required-star">*</span></label>
           <div class="phone-input-wrapper">
             <span class="prefix">+1</span>
@@ -341,6 +346,7 @@
     var orderInput = document.getElementById('orderNumber');
     var nameInput = document.getElementById('driverName');
     var carrierInput = document.getElementById('carrier');
+    var trailerInput = document.getElementById('trailer');
     var phoneInput = document.getElementById('phoneNumber');
     var destinationInput = document.getElementById('destination');
     var dateDisplay = document.getElementById('dateDisplay');
@@ -470,7 +476,7 @@
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
 
-      var fields = [orderInput, nameInput, carrierInput, phoneInput, destinationInput];
+      var fields = [orderInput, nameInput, carrierInput, trailerInput, phoneInput, destinationInput];
       var valid = true;
 
       for (var i = 0; i < fields.length; i++) {
@@ -515,6 +521,7 @@
         Order: orderNumber,
         driver_name: nameInput.value.trim(),
         carrier: carrierInput.value.trim(),
+        trailer: trailerInput.value.trim(),
         phone: '+1 ' + phoneInput.value.trim(),
         destination: destinationInput.value.trim(),
         checkin_date: dateDisplay.textContent,
@@ -555,7 +562,7 @@
       setTimeout(function() {
         updateTimestamps();
         resetOrderValidation();
-        var fields = [orderInput, nameInput, carrierInput, phoneInput, destinationInput];
+        var fields = [orderInput, nameInput, carrierInput, trailerInput, phoneInput, destinationInput];
         for (var i = 0; i < fields.length; i++) {
           fields[i].style.borderColor = '';
         }

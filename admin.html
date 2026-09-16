@@ -259,10 +259,16 @@
       color: #64748b;
     }
 
-    .refresh-btn {
+    .orders-meta-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .refresh-btn,
+    .remove-all-btn {
       background: none;
       border: none;
-      color: #0b3b5c;
       font-family: inherit;
       font-size: 0.78rem;
       font-weight: 600;
@@ -271,7 +277,12 @@
       border-radius: 0.5rem;
       transition: 0.15s;
     }
+    .refresh-btn { color: #0b3b5c; }
     .refresh-btn:hover { background: #e0f2fe; }
+
+    .remove-all-btn { color: #b91c1c; }
+    .remove-all-btn:hover:not(:disabled) { background: #fee2e2; }
+    .remove-all-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .orders-list {
       max-height: 320px;
@@ -489,7 +500,10 @@
 
       <div class="orders-meta" style="margin-top:1.6rem;">
         <span class="orders-count" id="ordersCount">Loading…</span>
-        <button class="refresh-btn" id="refreshOrdersBtn">↻ Refresh</button>
+        <div class="orders-meta-actions">
+          <button class="refresh-btn" id="refreshOrdersBtn">↻ Refresh</button>
+          <button class="remove-all-btn" id="removeAllOrdersBtn">🗑️ Remove all orders</button>
+        </div>
       </div>
 
       <div class="orders-list" id="ordersList">
@@ -593,6 +607,7 @@
 
     var removeOrderInput = document.getElementById('removeOrderInput');
     var removeOrderBtn = document.getElementById('removeOrderBtn');
+    var removeAllOrdersBtn = document.getElementById('removeAllOrdersBtn');
     var ordersList = document.getElementById('ordersList');
     var ordersCount = document.getElementById('ordersCount');
     var refreshOrdersBtn = document.getElementById('refreshOrdersBtn');
@@ -867,6 +882,36 @@
     });
 
     refreshOrdersBtn.addEventListener('click', loadOrders);
+
+    // ─────────────────────────────────────────
+    //  REMOVE ALL ORDERS (only orders, not drivers)
+    // ─────────────────────────────────────────
+    removeAllOrdersBtn.addEventListener('click', async function() {
+      if (!confirm('Remove ALL orders? Drivers will not be affected. This cannot be undone.')) return;
+
+      removeAllOrdersBtn.disabled = true;
+      removeAllOrdersBtn.textContent = '⏳ Removing…';
+
+      try {
+        const r = await authFetch('/api/orders', { method: 'DELETE' });
+        const j = await r.json().catch(function() { return {}; });
+
+        if (!r.ok) {
+          showToast(j.error || 'Unable to remove all orders', true);
+          return;
+        }
+
+        showToast('Removed ' + (j.deletedOrders || 0) + ' order(s)');
+        loadOrders();
+      } catch (err) {
+        if (err.message === 'Unauthorized') return;
+        console.error(err);
+        showToast('Network error — is the server running?', true);
+      } finally {
+        removeAllOrdersBtn.disabled = false;
+        removeAllOrdersBtn.textContent = '🗑️ Remove all orders';
+      }
+    });
 
     // ─────────────────────────────────────────
     //  PIN CHANGE
