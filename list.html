@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <title>Driver Check-In · List</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: max(1.5rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left));
+      position: relative;
+    }
+
+    input, button, textarea, select { font-size: 16px; }
+
+    .back-home {
+      position: fixed;
+      top: max(1.5rem, env(safe-area-inset-top));
+      left: max(1.5rem, env(safe-area-inset-left));
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.3rem;
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 3rem;
+      color: #334155;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 500;
+      text-decoration: none;
+      box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.08);
+      transition: all 0.2s ease;
+      z-index: 100;
+      min-height: 44px;
+    }
+    .back-home:hover, .back-home:active {
+      background: #0b3b5c;
+      border-color: #0b3b5c;
+      color: #fff;
+      transform: translateX(-3px);
+      box-shadow: 0 10px 18px -6px rgba(11, 59, 92, 0.35);
+    }
+    .back-home .arrow { font-size: 1rem; line-height: 1; transition: transform 0.2s ease; }
+    .back-home:hover .arrow, .back-home:active .arrow { transform: translateX(-2px); }
+
+    .list-panel {
+      background: #fff;
+      border-radius: 2rem;
+      box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.15);
+      width: 80%;
+      max-width: 1400px;
+      padding: 2rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      margin-top: 2.5rem;
+      max-height: calc(100vh - 5rem);
+    }
+
+    .list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.4rem;
+      padding-bottom: 1rem;
+      border-bottom: 1.5px solid #eef2f6;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      flex-shrink: 0;
+    }
+    .list-header h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .header-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+
+    .total-checkins-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: linear-gradient(135deg, #0b3b5c, #1e6a96);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.55rem 1.1rem;
+      border-radius: 2rem;
+      box-shadow: 0 4px 12px -4px rgba(11, 59, 92, 0.4);
+      white-space: nowrap;
+      min-height: 40px;
+    }
+    .total-checkins-badge .badge-icon { font-size: 1rem; line-height: 1; }
+    .total-checkins-badge .badge-number {
+      font-size: 1rem;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.22);
+      padding: 0.15rem 0.6rem;
+      border-radius: 1rem;
+      min-width: 1.6rem;
+      text-align: center;
+    }
+
+    .clear-btn {
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      color: #64748b;
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding: 0.6rem 1.15rem;
+      border-radius: 2rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: 0.2s;
+      min-height: 40px;
+    }
+    .clear-btn:hover, .clear-btn:active {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #b91c1c;
+    }
+
+    .list-scroll { overflow-y: auto; flex: 1; min-height: 0; -webkit-overflow-scrolling: touch; }
+
+    .empty-state {
+      color: #94a3b8;
+      font-size: 1rem;
+      text-align: center;
+      padding: 3rem 1rem;
+      line-height: 1.6;
+    }
+    .empty-state .empty-emoji { font-size: 3rem; display: block; margin-bottom: 0.75rem; opacity: 0.6; }
+    .loading-state { color: #94a3b8; font-size: 0.9rem; text-align: center; padding: 2rem 1rem; }
+
+    .checkin-item {
+      display: flex;
+      gap: 1.1rem;
+      padding: 1.2rem 1.1rem;
+      border-radius: 1rem;
+      border-bottom: 1px solid #f1f5f9;
+      position: relative;
+      transition: background 0.15s;
+      align-items: flex-start;
+    }
+    .checkin-item:last-child { border-bottom: none; }
+    @media (hover: hover) { .checkin-item:hover { background: #f8fafc; } }
+    @media (hover: none) and (pointer: coarse) {
+      .checkin-item { padding: 1.3rem 1.2rem; gap: 1.2rem; }
+      .checkin-item:active { background: #f1f5f9; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; transform: translateX(0); }
+      to { opacity: 0; transform: translateX(30px); }
+    }
+    .checkin-item.removing { animation: fadeOut 0.25s ease forwards; }
+
+    .checkin-avatar {
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #0b3b5c, #1e6a96);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 1.15rem;
+      flex-shrink: 0;
+    }
+    @media (min-width: 768px) {
+      .checkin-avatar { width: 58px; height: 58px; font-size: 1.2rem; }
+    }
+
+    .checkin-info { flex: 1; min-width: 0; }
+    .checkin-name { font-weight: 600; font-size: 1.05rem; color: #0f172a; margin-bottom: 0.25rem; }
+    @media (min-width: 768px) { .checkin-name { font-size: 1.12rem; } }
+
+    .checkin-order {
+      display: inline-block;
+      font-size: 1rem;
+      font-weight: 600;
+      background: #fef3c7;
+      color: #92400e;
+      padding: 0.28rem 0.75rem;
+      border-radius: 0.45rem;
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.02em;
+    }
+    @media (min-width: 768px) {
+      .checkin-order { font-size: 1.15rem; padding: 0.32rem 0.85rem; }
+    }
+
+    .checkin-meta {
+      font-size: 0.88rem;
+      color: #64748b;
+      line-height: 1.65;
+      display: flex;
+      flex-direction: column;
+    }
+    @media (min-width: 768px) { .checkin-meta { font-size: 0.92rem; } }
+
+    .checkin-times {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.5rem;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    .time-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 0.55rem 1rem;
+      border-radius: 2rem;
+      white-space: nowrap;
+      letter-spacing: 0.01em;
+    }
+    @media (min-width: 768px) {
+      .time-badge { font-size: 1.3rem; padding: 0.65rem 1.15rem; }
+    }
+    .time-badge .badge-icon { font-size: 1em; line-height: 1; }
+    .time-badge .badge-label {
+      font-weight: 500;
+      opacity: 0.85;
+      font-size: 0.85em;
+    }
+
+    .checkin-time-badge { background: #e0f2fe; color: #0369a1; }
+
+    .remove-btn {
+      position: absolute;
+      top: 0.7rem;
+      right: 0.7rem;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      color: #94a3b8;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      opacity: 0;
+      transition: all 0.2s;
+      padding: 0;
+      font-family: inherit;
+      z-index: 3;
+    }
+    @media (hover: hover) { .checkin-item:hover .remove-btn { opacity: 1; } }
+    .remove-btn:hover, .remove-btn:active {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #b91c1c;
+      transform: scale(1.1);
+    }
+    .remove-btn:active { transform: scale(0.95); }
+    @media (hover: none) and (pointer: coarse) {
+      .remove-btn { opacity: 0.85; }
+      .remove-btn:active { opacity: 1; }
+    }
+
+    @media (max-width: 1024px) {
+      .list-panel { width: 92%; padding: 2rem 2rem; max-height: calc(100vh - 4rem); margin-top: 3.2rem; }
+    }
+    @media (max-width: 900px) {
+      .list-panel {
+        width: 95%;
+        padding: 1.8rem 1.5rem;
+        border-radius: 1.5rem;
+        margin-top: 3.5rem;
+        max-height: none;
+        height: auto;
+      }
+      .list-scroll { overflow: visible; flex: none; }
+    }
+    @media (max-width: 640px) {
+      .list-panel { width: 100%; padding: 1.5rem 1.2rem; }
+      .list-header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+      .list-header h2 { font-size: 1.25rem; }
+      .header-actions { width: 100%; justify-content: flex-start; }
+      .checkin-item { flex-wrap: wrap; }
+      .checkin-order { font-size: 0.92rem; padding: 0.25rem 0.7rem; }
+      .checkin-times {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 0.45rem;
+        width: 100%;
+        margin-left: 0;
+        margin-top: 0.6rem;
+        padding-left: 66px;
+      }
+      .time-badge { font-size: 0.95rem; padding: 0.45rem 0.8rem; }
+      .total-checkins-badge { font-size: 0.78rem; padding: 0.45rem 0.85rem; }
+      .total-checkins-badge .badge-number { font-size: 0.9rem; }
+    }
+    @media (max-width: 600px) {
+      .back-home {
+        top: max(0.9rem, env(safe-area-inset-top));
+        left: max(0.9rem, env(safe-area-inset-left));
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+      }
+    }
+
+    .pin-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: max(1.5rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left));
+      z-index: 2000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    .pin-overlay.show { opacity: 1; visibility: visible; }
+
+    .pin-modal {
+      background: #fff;
+      border-radius: 1.6rem;
+      padding: 2.2rem 2rem 1.8rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+      text-align: center;
+      transform: translateY(20px) scale(0.96);
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .pin-overlay.show .pin-modal { transform: translateY(0) scale(1); }
+
+    .pin-icon {
+      width: 60px;
+      height: 60px;
+      background: #e0f2fe;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.7rem;
+      margin: 0 auto 1rem;
+    }
+    .pin-modal h3 { font-size: 1.15rem; font-weight: 600; color: #0f172a; margin-bottom: 0.4rem; }
+    .pin-modal p { font-size: 0.88rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.5; }
+
+    .pin-input-wrap { display: flex; justify-content: center; gap: 0.6rem; margin-bottom: 0.9rem; }
+    .pin-digit {
+      width: 52px;
+      height: 60px;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 600;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #0f172a;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 0.9rem;
+      outline: none;
+      transition: all 0.2s;
+      background: #f8fafc;
+      caret-color: #0b3b5c;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .pin-digit:focus {
+      border-color: #0b3b5c;
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(11, 59, 92, 0.08);
+    }
+    .pin-digit.filled { background: #fff; border-color: #0b3b5c; }
+    @media (max-width: 400px) {
+      .pin-digit { width: 44px; height: 54px; font-size: 1.3rem; }
+      .pin-input-wrap { gap: 0.45rem; }
+    }
+
+    .pin-error {
+      font-size: 0.82rem;
+      color: #b91c1c;
+      font-weight: 500;
+      min-height: 1.15rem;
+      margin-bottom: 0.65rem;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .pin-error.show { opacity: 1; }
+
+    .pin-actions { display: flex; gap: 0.7rem; margin-top: 0.4rem; }
+    .pin-actions .btn {
+      flex: 1;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 500;
+      padding: 0.9rem 1rem;
+      border-radius: 0.9rem;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: 0.2s;
+      border: 1.5px solid #e2e8f0;
+      background: #fff;
+      color: #334155;
+      min-height: 48px;
+    }
+    .pin-actions .btn:hover, .pin-actions .btn:active { background: #f8fafc; }
+    .pin-actions .btn-primary { background: #0b3b5c; border-color: #0b3b5c; color: #fff; }
+    .pin-actions .btn-primary:hover, .pin-actions .btn-primary:active { background: #0a2f4a; }
+
+    .pin-modal.shake { animation: shake 0.4s ease; }
+    @keyframes shake {
+      0%, 100% { transform: translateY(0) scale(1); }
+      20% { transform: translateY(0) scale(1) translateX(-8px); }
+      40% { transform: translateY(0) scale(1) translateX(8px); }
+      60% { transform: translateY(0) scale(1) translateX(-5px); }
+      80% { transform: translateY(0) scale(1) translateX(5px); }
+    }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="back-home">
+    <span class="arrow">←</span>
+    Back to Home
+  </a>
+
+  <div class="list-panel">
+    <div class="list-header">
+      <h2>📋 Checked-in drivers</h2>
+      <div class="header-actions">
+        <span class="total-checkins-badge" id="totalCheckinsBadge" title="Total drivers checked in">
+          <span class="badge-icon">👥</span>
+          <span>Total Check-ins</span>
+          <span class="badge-number" id="totalCheckinsNumber">0</span>
+        </span>
+        <button class="clear-btn" id="clearBtn" title="Clear all check-ins">Clear all</button>
+      </div>
+    </div>
+
+    <div class="list-scroll">
+      <div class="loading-state" id="loadingState">Loading…</div>
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <span class="empty-emoji">📭</span>
+        No drivers checked in yet.<br>
+        Completed check-ins will appear here.
+      </div>
+      <div id="checkinList"></div>
+    </div>
+  </div>
+
+  <div class="pin-overlay" id="pinOverlay">
+    <div class="pin-modal" id="pinModal">
+      <div class="pin-icon" id="pinIcon">🔒</div>
+      <h3 id="pinTitle">Enter PIN</h3>
+      <p id="pinSubtitle">Enter your 4-digit PIN to continue.</p>
+
+      <div class="pin-input-wrap">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
+      </div>
+
+      <div class="pin-error" id="pinError">Incorrect PIN. Try again.</div>
+
+      <div class="pin-actions">
+        <button class="btn" id="pinCancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="pinConfirmBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+    const REFRESH_INTERVAL = 3000;
+    const TOKEN_KEY = 'adminToken';
+
+    var checkinList = document.getElementById('checkinList');
+    var emptyState = document.getElementById('emptyState');
+    var loadingState = document.getElementById('loadingState');
+    var totalCheckinsNumber = document.getElementById('totalCheckinsNumber');
+    var clearBtn = document.getElementById('clearBtn');
+
+    var pinOverlay = document.getElementById('pinOverlay');
+    var pinModal = document.getElementById('pinModal');
+    var pinIcon = document.getElementById('pinIcon');
+    var pinTitle = document.getElementById('pinTitle');
+    var pinSubtitle = document.getElementById('pinSubtitle');
+    var pinError = document.getElementById('pinError');
+    var pinCancelBtn = document.getElementById('pinCancelBtn');
+    var pinConfirmBtn = document.getElementById('pinConfirmBtn');
+    var pinDigits = document.querySelectorAll('.pin-digit');
+
+    var pendingAction = null;
+    var isLoading = false;
+    var pinBuffer = ['', '', '', ''];
+
+    function escapeHtml(str) {
+      if (str == null) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getInitials(name) {
+      if (!name) return '?';
+      var parts = name.trim().split(/\s+/);
+      if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+
+    async function getDrivers() {
+      const response = await fetch(API_BASE + '/drivers');
+      if (!response.ok) {
+        const result = await response.json().catch(function() { return {}; });
+        throw new Error(result.error || 'Unable to load drivers');
+      }
+      const result = await response.json();
+      return result.drivers || [];
+    }
+
+    function buildItemHTML(row) {
+      var orderNum = row.Order !== undefined ? row.Order : (row.order || '');
+      var checkinTime = row.checkin_time || '';
+      var carrier = row.carrier || '';
+
+      var checkinBadge = checkinTime
+        ? '<span class="time-badge checkin-time-badge"><span class="badge-icon">✅</span> <span class="badge-label">Check-in Time:</span> ' + escapeHtml(checkinTime) + '</span>'
+        : '<span class="time-badge checkin-time-badge"><span class="badge-icon">✅</span> <span class="badge-label">Check-in Time:</span> —</span>';
+
+      var carrierLine = carrier
+        ? '<span>🏢 ' + escapeHtml(carrier) + '</span>'
+        : '<span>🏢 —</span>';
+
+      return '' +
+        '<div class="checkin-item" data-id="' + row.id + '">' +
+          '<button class="remove-btn" onclick="requestRemove(' + row.id + ')" title="Remove driver" aria-label="Remove driver">✕</button>' +
+          '<div class="checkin-avatar">' + getInitials(row.driver_name) + '</div>' +
+          '<div class="checkin-info">' +
+            '<div class="checkin-order">#' + escapeHtml(orderNum) + '</div>' +
+            '<div class="checkin-name">' + escapeHtml(row.driver_name) + '</div>' +
+            '<div class="checkin-meta">' +
+              carrierLine +
+              '<span>📞 ' + escapeHtml(row.phone) + '</span>' +
+              '<span>📍 ' + escapeHtml(row.destination) + '</span>' +
+              '<span>📅 ' + escapeHtml(row.checkin_date || '') + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="checkin-times">' + checkinBadge + '</div>' +
+        '</div>';
+    }
+
+    async function renderList() {
+      if (isLoading) return;
+      isLoading = true;
+
+      try {
+        var rows = await getDrivers();
+        loadingState.style.display = 'none';
+        totalCheckinsNumber.textContent = rows.length;
+
+        if (rows.length === 0) {
+          emptyState.style.display = 'block';
+          checkinList.innerHTML = '';
+          return;
+        }
+
+        emptyState.style.display = 'none';
+
+        var html = '';
+        for (var i = 0; i < rows.length; i++) {
+          html += buildItemHTML(rows[i]);
+        }
+        checkinList.innerHTML = html;
+      } catch (err) {
+        console.error('Render error:', err);
+        loadingState.textContent = 'Unable to load check-ins.';
+      } finally {
+        isLoading = false;
+      }
+    }
+
+    function clearPinInputs() {
+      pinBuffer = ['', '', '', ''];
+      for (var i = 0; i < pinDigits.length; i++) {
+        pinDigits[i].value = '';
+        pinDigits[i].classList.remove('filled');
+      }
+      pinError.classList.remove('show');
+      pinModal.classList.remove('shake');
+    }
+
+    function openPinModal(action) {
+      pendingAction = action;
+      clearPinInputs();
+
+      if (action.type === 'clear') {
+        pinTitle.textContent = 'Clear all check-ins';
+        pinSubtitle.textContent = 'Enter PIN to remove all drivers from the list.';
+        pinIcon.textContent = '⚠️';
+      } else {
+        pinTitle.textContent = 'Remove driver';
+        pinSubtitle.textContent = 'Enter PIN to remove this driver from the list.';
+        pinIcon.textContent = '🔒';
+      }
+
+      pinOverlay.classList.add('show');
+      setTimeout(function() { pinDigits[0].focus(); }, 100);
+    }
+
+    function closePinModal() {
+      pinOverlay.classList.remove('show');
+      pendingAction = null;
+      clearPinInputs();
+    }
+
+    async function verifyPin() {
+      var entered = pinBuffer.join('');
+      if (entered.length !== 4) return;
+
+      try {
+        const response = await fetch(API_BASE + '/pin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: entered })
+        });
+        const result = await response.json();
+
+        if (response.ok && result.token) {
+          localStorage.setItem(TOKEN_KEY, result.token);
+          var action = pendingAction;
+          closePinModal();
+          if (action) executeAction(action);
+        } else {
+          pinError.textContent = result.error || 'Incorrect PIN. Try again.';
+          pinError.classList.add('show');
+          pinModal.classList.add('shake');
+          setTimeout(function() { pinModal.classList.remove('shake'); }, 400);
+          setTimeout(function() {
+            clearPinInputs();
+            pinDigits[0].focus();
+          }, 500);
+        }
+      } catch (err) {
+        console.error('PIN login error:', err);
+        pinError.textContent = 'Network error — is the server running?';
+        pinError.classList.add('show');
+        setTimeout(function() {
+          clearPinInputs();
+          pinDigits[0].focus();
+        }, 800);
+      }
+    }
+
+    for (var i = 0; i < pinDigits.length; i++) {
+      (function(idx) {
+        var input = pinDigits[idx];
+
+        input.addEventListener('input', function() {
+          var val = this.value.replace(/\D/g, '');
+          this.value = val.charAt(0);
+          pinBuffer[idx] = this.value;
+          this.classList.toggle('filled', !!this.value);
+
+          if (this.value && idx < pinDigits.length - 1) {
+            pinDigits[idx + 1].focus();
+          }
+
+          if (pinBuffer.every(function(d) { return d; })) {
+            setTimeout(verifyPin, 120);
+          }
+        });
+
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Backspace' && !this.value && idx > 0) {
+            pinDigits[idx - 1].focus();
+            pinDigits[idx - 1].value = '';
+            pinBuffer[idx - 1] = '';
+            pinDigits[idx - 1].classList.remove('filled');
+          }
+          if (e.key === 'Enter') verifyPin();
+        });
+
+        input.addEventListener('paste', function(e) {
+          e.preventDefault();
+          var pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+          for (var p = 0; p < 4; p++) {
+            pinBuffer[p] = pasted.charAt(p) || '';
+            pinDigits[p].value = pinBuffer[p];
+            pinDigits[p].classList.toggle('filled', !!pinBuffer[p]);
+          }
+          if (pasted.length >= 4) setTimeout(verifyPin, 120);
+        });
+      })(i);
+    }
+
+    pinConfirmBtn.addEventListener('click', verifyPin);
+    pinCancelBtn.addEventListener('click', closePinModal);
+    pinOverlay.addEventListener('click', function(e) {
+      if (e.target === pinOverlay) closePinModal();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && pinOverlay.classList.contains('show')) closePinModal();
+    });
+
+    async function executeAction(action) {
+      var token = localStorage.getItem(TOKEN_KEY);
+      if (!token) {
+        alert('Session expired. Please try again.');
+        return;
+      }
+
+      var headers = { 'Authorization': 'Bearer ' + token };
+
+      try {
+        if (action.type === 'remove') {
+          var item = checkinList.querySelector('[data-id="' + action.id + '"]');
+          if (item) item.classList.add('removing');
+
+          const response = await fetch(API_BASE + '/drivers/' + action.id, {
+            method: 'DELETE',
+            headers: headers
+          });
+          const result = await response.json().catch(function() { return {}; });
+
+          if (response.status === 401) {
+            localStorage.removeItem(TOKEN_KEY);
+            if (item) item.classList.remove('removing');
+            alert('Session expired. Please try again.');
+            return;
+          }
+          if (!response.ok) {
+            if (item) item.classList.remove('removing');
+            alert('Could not remove driver: ' + (result.error || 'Unknown error'));
+            return;
+          }
+          setTimeout(renderList, 250);
+        } else if (action.type === 'clear') {
+          const response = await fetch(API_BASE + '/drivers', {
+            method: 'DELETE',
+            headers: headers
+          });
+          const result = await response.json().catch(function() { return {}; });
+
+          if (response.status === 401) {
+            localStorage.removeItem(TOKEN_KEY);
+            alert('Session expired. Please try again.');
+            return;
+          }
+          if (!response.ok) {
+            alert('Could not clear list: ' + (result.error || 'Unknown error'));
+            return;
+          }
+          renderList();
+        }
+      } catch (err) {
+        console.error('Action error:', err);
+        alert('Database connection error. Is the Node.js server running?');
+      }
+    }
+
+    window.requestRemove = function(id) {
+      openPinModal({ type: 'remove', id: id });
+    };
+
+    clearBtn.addEventListener('click', function() {
+      openPinModal({ type: 'clear' });
+    });
+
+    setInterval(renderList, REFRESH_INTERVAL);
+
+    renderList();
+  </script>
+</body>
+</html>

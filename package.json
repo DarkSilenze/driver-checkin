@@ -1,0 +1,17 @@
+{
+  "name": "driver-checkin",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "stop": "node stop.js",
+    "restart": "npm stop && npm start"
+  },
+  "allowScripts": {
+    "better-sqlite3": true
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "express": "^4.19.2"
+  }
+}

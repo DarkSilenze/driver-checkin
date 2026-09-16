@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Driver Check-In · Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .home-card {
+      background: #fff;
+      border-radius: 2rem;
+      box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.15);
+      max-width: 520px;
+      width: 100%;
+      padding: 3rem 2.8rem;
+      text-align: center;
+    }
+
+    .home-icon {
+      background: #0b3b5c;
+      width: 64px;
+      height: 64px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 2rem;
+      margin: 0 auto 1.2rem;
+    }
+
+    h1 { font-size: 1.8rem; font-weight: 600; color: #0f172a; margin-bottom: 0.4rem; }
+    p { font-size: 0.95rem; color: #64748b; margin-bottom: 2rem; }
+
+    .links { display: flex; flex-direction: column; gap: 0.9rem; }
+
+    .link-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.1rem 1.4rem;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 1rem;
+      color: #0f172a;
+      font-weight: 500;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: 0.2s;
+      cursor: pointer;
+      font-family: inherit;
+      width: 100%;
+    }
+
+    .link-btn:hover {
+      background: #0b3b5c;
+      border-color: #0b3b5c;
+      color: #fff;
+      transform: translateY(-2px);
+    }
+
+    .link-btn .emoji { font-size: 1.2rem; margin-right: 0.7rem; }
+    .link-btn .arrow { opacity: 0.5; }
+
+    .pin-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      z-index: 2000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    .pin-overlay.show { opacity: 1; visibility: visible; }
+
+    .pin-modal {
+      background: #fff;
+      border-radius: 1.6rem;
+      padding: 2.2rem 2rem 1.8rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+      text-align: center;
+      transform: translateY(20px) scale(0.96);
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .pin-overlay.show .pin-modal { transform: translateY(0) scale(1); }
+
+    .pin-icon {
+      width: 60px;
+      height: 60px;
+      background: #e0f2fe;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.7rem;
+      margin: 0 auto 1rem;
+    }
+
+    .pin-modal h3 { font-size: 1.15rem; font-weight: 600; color: #0f172a; margin-bottom: 0.4rem; }
+    .pin-modal p { font-size: 0.88rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.5; }
+
+    .pin-input-wrap { display: flex; justify-content: center; gap: 0.6rem; margin-bottom: 0.9rem; }
+    .pin-digit {
+      width: 52px;
+      height: 60px;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 600;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: #0f172a;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 0.9rem;
+      outline: none;
+      transition: all 0.2s;
+      background: #f8fafc;
+      caret-color: #0b3b5c;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .pin-digit:focus {
+      border-color: #0b3b5c;
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(11, 59, 92, 0.08);
+    }
+    .pin-digit.filled { background: #fff; border-color: #0b3b5c; }
+
+    @media (max-width: 400px) {
+      .pin-digit { width: 44px; height: 54px; font-size: 1.3rem; }
+      .pin-input-wrap { gap: 0.45rem; }
+    }
+
+    .pin-error {
+      font-size: 0.82rem;
+      color: #b91c1c;
+      font-weight: 500;
+      min-height: 1.15rem;
+      margin-bottom: 0.65rem;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .pin-error.show { opacity: 1; }
+
+    .pin-actions { display: flex; gap: 0.7rem; margin-top: 0.4rem; }
+    .pin-actions .btn {
+      flex: 1;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-weight: 500;
+      padding: 0.9rem 1rem;
+      border-radius: 0.9rem;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: 0.2s;
+      border: 1.5px solid #e2e8f0;
+      background: #fff;
+      color: #334155;
+      min-height: 48px;
+    }
+    .pin-actions .btn:hover, .pin-actions .btn:active { background: #f8fafc; }
+    .pin-actions .btn-primary { background: #0b3b5c; border-color: #0b3b5c; color: #fff; }
+    .pin-actions .btn-primary:hover, .pin-actions .btn-primary:active { background: #0a2f4a; }
+
+    .pin-modal.shake { animation: shake 0.4s ease; }
+    @keyframes shake {
+      0%, 100% { transform: translateY(0) scale(1); }
+      20% { transform: translateY(0) scale(1) translateX(-8px); }
+      40% { transform: translateY(0) scale(1) translateX(8px); }
+      60% { transform: translateY(0) scale(1) translateX(-5px); }
+      80% { transform: translateY(0) scale(1) translateX(5px); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="home-card">
+    <div class="home-icon">🚛</div>
+    <h1>Driver Check-In</h1>
+    <p>Choose an action below</p>
+    <div class="links">
+      <a href="form.html" class="link-btn">
+        <span><span class="emoji">📝</span>Driver check-in</span>
+        <span class="arrow">→</span>
+      </a>
+      <a href="list.html" class="link-btn">
+        <span><span class="emoji">📋</span>View checked-in drivers</span>
+        <span class="arrow">→</span>
+      </a>
+      <button type="button" class="link-btn" id="adminBtn">
+        <span><span class="emoji">🔐</span>Admin</span>
+        <span class="arrow">→</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="pin-overlay" id="pinOverlay">
+    <div class="pin-modal" id="pinModal">
+      <div class="pin-icon">🔒</div>
+      <h3>Admin access</h3>
+      <p>Enter your 4-digit PIN to continue.</p>
+
+      <div class="pin-input-wrap">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
+      </div>
+
+      <div class="pin-error" id="pinError">Incorrect PIN. Try again.</div>
+
+      <div class="pin-actions">
+        <button class="btn" id="pinCancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="pinConfirmBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var adminBtn = document.getElementById('adminBtn');
+    var pinOverlay = document.getElementById('pinOverlay');
+    var pinModal = document.getElementById('pinModal');
+    var pinError = document.getElementById('pinError');
+    var pinCancelBtn = document.getElementById('pinCancelBtn');
+    var pinConfirmBtn = document.getElementById('pinConfirmBtn');
+    var pinDigits = document.querySelectorAll('.pin-digit');
+
+    var pinBuffer = ['', '', '', ''];
+
+    function clearPinInputs() {
+      pinBuffer = ['', '', '', ''];
+      for (var i = 0; i < pinDigits.length; i++) {
+        pinDigits[i].value = '';
+        pinDigits[i].classList.remove('filled');
+      }
+      pinError.classList.remove('show');
+      pinModal.classList.remove('shake');
+    }
+
+    function openPinModal() {
+      clearPinInputs();
+      pinOverlay.classList.add('show');
+      setTimeout(function() { pinDigits[0].focus(); }, 100);
+    }
+
+    function closePinModal() {
+      pinOverlay.classList.remove('show');
+      clearPinInputs();
+    }
+
+    async function verifyPin() {
+      var entered = pinBuffer.join('');
+      if (entered.length !== 4) return;
+
+      try {
+        const response = await fetch('/api/pin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: entered })
+        });
+        const result = await response.json();
+
+        if (response.ok && result.token) {
+          localStorage.setItem('adminToken', result.token);
+          window.location.href = 'admin.html';
+        } else {
+          pinError.textContent = result.error || 'Incorrect PIN. Try again.';
+          pinError.classList.add('show');
+          pinModal.classList.add('shake');
+          setTimeout(function() { pinModal.classList.remove('shake'); }, 400);
+          setTimeout(function() {
+            clearPinInputs();
+            pinDigits[0].focus();
+          }, 500);
+        }
+      } catch (err) {
+        console.error('PIN login error:', err);
+        pinError.textContent = 'Network error — is the server running?';
+        pinError.classList.add('show');
+        setTimeout(function() {
+          clearPinInputs();
+          pinDigits[0].focus();
+        }, 800);
+      }
+    }
+
+    for (var i = 0; i < pinDigits.length; i++) {
+      (function(idx) {
+        var input = pinDigits[idx];
+
+        input.addEventListener('input', function() {
+          var val = this.value.replace(/\D/g, '');
+          this.value = val.charAt(0);
+          pinBuffer[idx] = this.value;
+          this.classList.toggle('filled', !!this.value);
+
+          if (this.value && idx < pinDigits.length - 1) {
+            pinDigits[idx + 1].focus();
+          }
+
+          if (pinBuffer.every(function(d) { return d; })) {
+            setTimeout(verifyPin, 120);
+          }
+        });
+
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Backspace' && !this.value && idx > 0) {
+            pinDigits[idx - 1].focus();
+            pinDigits[idx - 1].value = '';
+            pinBuffer[idx - 1] = '';
+            pinDigits[idx - 1].classList.remove('filled');
+          }
+          if (e.key === 'Enter') verifyPin();
+        });
+
+        input.addEventListener('paste', function(e) {
+          e.preventDefault();
+          var pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+          for (var p = 0; p < 4; p++) {
+            pinBuffer[p] = pasted.charAt(p) || '';
+            pinDigits[p].value = pinBuffer[p];
+            pinDigits[p].classList.toggle('filled', !!pinBuffer[p]);
+          }
+          if (pasted.length >= 4) setTimeout(verifyPin, 120);
+        });
+      })(i);
+    }
+
+    pinConfirmBtn.addEventListener('click', verifyPin);
+    pinCancelBtn.addEventListener('click', closePinModal);
+    pinOverlay.addEventListener('click', function(e) {
+      if (e.target === pinOverlay) closePinModal();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && pinOverlay.classList.contains('show')) closePinModal();
+    });
+
+    adminBtn.addEventListener('click', openPinModal);
+  </script>
+</body>
+</html>

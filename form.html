@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Driver Check-In · Form</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { overflow-x: hidden; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .back-home {
+      position: fixed;
+      top: 1.5rem;
+      left: 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.2rem;
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 3rem;
+      color: #334155;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 500;
+      text-decoration: none;
+      box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.08);
+      transition: all 0.2s ease;
+      z-index: 100;
+    }
+    .back-home:hover {
+      background: #0b3b5c;
+      border-color: #0b3b5c;
+      color: #fff;
+      transform: translateX(-3px);
+      box-shadow: 0 10px 18px -6px rgba(11, 59, 92, 0.35);
+    }
+    .back-home .arrow { font-size: 1rem; line-height: 1; transition: transform 0.2s ease; }
+    .back-home:hover .arrow { transform: translateX(-2px); }
+
+    .checkin-card {
+      background: #fff;
+      border-radius: 2rem;
+      box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.15);
+      width: 100%;
+      max-width: 620px;
+      padding: 2.5rem 2.8rem;
+    }
+
+    .header { margin-bottom: 2.2rem; display: flex; align-items: center; gap: 0.75rem; }
+    .header-icon {
+      background: #0b3b5c;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.6rem;
+    }
+    .header h1 { font-size: 1.9rem; font-weight: 600; color: #0f172a; }
+    .header p { font-size: 0.9rem; color: #64748b; margin-top: 0.15rem; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem 1.8rem; }
+    .full-width { grid-column: 1 / -1; }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .required-star { color: #c2410c; }
+
+    .auto-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 0.15rem 0.5rem;
+      border-radius: 2rem;
+      margin-left: 0.4rem;
+    }
+
+    input {
+      font-family: 'Inter', sans-serif;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 0.9rem;
+      padding: 0.8rem 1rem;
+      font-size: 0.95rem;
+      color: #0f172a;
+      width: 100%;
+      outline: none;
+      transition: 0.2s;
+    }
+    input:focus {
+      border-color: #0b3b5c;
+      box-shadow: 0 0 0 4px rgba(11, 59, 92, 0.08);
+    }
+    input.input-error {
+      border-color: #b91c1c !important;
+      box-shadow: 0 0 0 4px rgba(185, 28, 28, 0.1) !important;
+    }
+
+    .field-error {
+      font-size: 0.75rem;
+      color: #b91c1c;
+      font-weight: 500;
+      display: none;
+      align-items: center;
+      gap: 0.3rem;
+      margin-top: 0.1rem;
+    }
+    .field-error.show { display: flex; }
+
+    .timestamp-field {
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 0.9rem;
+      padding: 0.8rem 1rem;
+      color: #0b3b5c;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .phone-input-wrapper,
+    .order-input-wrapper { position: relative; display: flex; align-items: center; }
+
+    .phone-input-wrapper .prefix,
+    .order-input-wrapper .prefix {
+      position: absolute;
+      left: 1rem;
+      color: #64748b;
+      font-weight: 500;
+      pointer-events: none;
+    }
+    .phone-input-wrapper input { padding-left: 2.4rem; }
+    .order-input-wrapper input { padding-left: 2.6rem; letter-spacing: 0.08em; font-weight: 500; }
+
+    .order-input-wrapper input[type="number"]::-webkit-outer-spin-button,
+    .order-input-wrapper input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .order-input-wrapper input[type="number"] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    .order-check {
+      font-size: 0.72rem;
+      font-weight: 500;
+      display: none;
+      align-items: center;
+      gap: 0.3rem;
+      margin-top: 0.1rem;
+    }
+    .order-check.checking { display: flex; color: #64748b; }
+    .order-check.valid { display: flex; color: #15803d; }
+
+    .form-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 1.2rem;
+      border-top: 1.5px solid #eef2f6;
+      padding-top: 2rem;
+    }
+
+    .btn {
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      padding: 0.9rem 2.2rem;
+      border-radius: 3rem;
+      font-size: 0.95rem;
+      cursor: pointer;
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      color: #334155;
+      transition: 0.2s;
+    }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .btn-primary {
+      background: #0b3b5c;
+      border-color: #0b3b5c;
+      color: #fff;
+      box-shadow: 0 10px 15px -6px rgba(11, 59, 92, 0.25);
+    }
+    .btn-primary:hover:not(:disabled) { background: #0a2f4a; transform: translateY(-1px); }
+    .btn-secondary:hover:not(:disabled) { background: #f8fafc; }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(200%);
+      background: #0b3b5c;
+      color: #fff;
+      padding: 0.9rem 1.8rem;
+      border-radius: 3rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      box-shadow: 0 15px 25px -8px rgba(11, 59, 92, 0.4);
+      transition: transform 0.35s ease, opacity 0.35s ease;
+      z-index: 1000;
+      pointer-events: none;
+      visibility: hidden;
+      opacity: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      white-space: nowrap;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      visibility: visible;
+      opacity: 1;
+    }
+    .toast.error { background: #b91c1c; }
+
+    @media (max-width: 600px) {
+      .back-home { top: 0.9rem; left: 0.9rem; padding: 0.55rem 1rem; font-size: 0.82rem; }
+      .checkin-card { padding: 1.8rem 1.5rem; border-radius: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="back-home">
+    <span class="arrow">←</span>
+    Back to Home
+  </a>
+
+  <div class="checkin-card">
+    <div class="header">
+      <div class="header-icon">🚛</div>
+      <div>
+        <h1>Driver check-in</h1>
+        <p>All fields are required</p>
+      </div>
+    </div>
+
+    <form id="driverCheckinForm">
+      <div class="form-grid">
+
+        <div class="form-group full-width">
+          <label for="orderNumber">Order # <span class="required-star">*</span></label>
+          <div class="order-input-wrapper">
+            <span class="prefix">#</span>
+            <input type="number" id="orderNumber" placeholder="330012345" required autocomplete="off" inputmode="numeric" min="0" step="1" maxlength="20">
+          </div>
+          <div class="order-check" id="orderCheck"></div>
+          <div class="field-error" id="orderError">
+            <span>⚠️</span>
+            <span id="orderErrorText">This order number was not found.</span>
+          </div>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="driverName">Driver full name <span class="required-star">*</span></label>
+          <input type="text" id="driverName" required>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="carrier">Carrier <span class="required-star">*</span></label>
+          <input type="text" id="carrier" required autocomplete="off">
+        </div>
+
+        <div class="form-group full-width">
+          <label for="phoneNumber">Phone number <span class="required-star">*</span></label>
+          <div class="phone-input-wrapper">
+            <span class="prefix">+1</span>
+            <input type="tel" id="phoneNumber" required inputmode="numeric" maxlength="20">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Date <span class="auto-badge">Auto</span></label>
+          <div class="timestamp-field">
+            <span>📅</span>
+            <span id="dateDisplay">--/--/----</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Time <span class="auto-badge">Auto</span></label>
+          <div class="timestamp-field">
+            <span>🕒</span>
+            <span id="timestampDisplay">--:--:--</span>
+          </div>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="destination">Destination <span class="required-star">*</span></label>
+          <input type="text" id="destination" required>
+        </div>
+
+        <div class="form-actions">
+          <button type="reset" class="btn btn-secondary">Reset</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">Check in driver</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="toast" id="toast">
+    <span id="toastIcon">✅</span>
+    <span id="toastMessage">Check-in successful</span>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+
+    var form = document.getElementById('driverCheckinForm');
+    var orderInput = document.getElementById('orderNumber');
+    var nameInput = document.getElementById('driverName');
+    var carrierInput = document.getElementById('carrier');
+    var phoneInput = document.getElementById('phoneNumber');
+    var destinationInput = document.getElementById('destination');
+    var dateDisplay = document.getElementById('dateDisplay');
+    var timestampDisplay = document.getElementById('timestampDisplay');
+    var submitBtn = document.getElementById('submitBtn');
+    var toast = document.getElementById('toast');
+    var toastIcon = document.getElementById('toastIcon');
+    var toastMessage = document.getElementById('toastMessage');
+    var orderCheck = document.getElementById('orderCheck');
+    var orderError = document.getElementById('orderError');
+    var orderErrorText = document.getElementById('orderErrorText');
+
+    var orderValidated = false;
+    var lastValidatedValue = '';
+    var lookupTimer = null;
+    var toastTimer = null;
+
+    function updateTimestamps() {
+      var now = new Date();
+      dateDisplay.textContent = now.toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric'
+      });
+      var h = now.getHours();
+      var m = String(now.getMinutes()).padStart(2, '0');
+      var s = String(now.getSeconds()).padStart(2, '0');
+      var ampm = h >= 12 ? 'PM' : 'AM';
+      var h12 = h % 12 || 12;
+      timestampDisplay.textContent = String(h12).padStart(2, '0') + ':' + m + ':' + s + ' ' + ampm;
+    }
+
+    phoneInput.addEventListener('input', function() {
+      this.value = this.value.replace(/[^0-9\s\-\(\)\+]/g, '');
+    });
+
+    orderInput.addEventListener('input', function() {
+      this.value = this.value.replace(/[^0-9]/g, '');
+      resetOrderValidation();
+
+      if (lookupTimer) clearTimeout(lookupTimer);
+      if (!this.value.trim()) return;
+      lookupTimer = setTimeout(lookupOrder, 600);
+    });
+
+    orderInput.addEventListener('keydown', function(e) {
+      if (['e', 'E', '+', '-', '.'].indexOf(e.key) !== -1) e.preventDefault();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        lookupOrder();
+      }
+    });
+
+    function clearOrderCheck() {
+      orderCheck.className = 'order-check';
+      orderCheck.textContent = '';
+    }
+
+    function resetOrderValidation() {
+      orderValidated = false;
+      lastValidatedValue = '';
+      orderInput.classList.remove('input-error');
+      clearOrderCheck();
+      orderError.classList.remove('show');
+    }
+
+    async function lookupOrder() {
+      var value = orderInput.value.trim();
+
+      if (!value) {
+        resetOrderValidation();
+        return;
+      }
+      if (orderValidated && lastValidatedValue === value) return;
+
+      orderCheck.className = 'order-check checking';
+      orderCheck.innerHTML = '<span>⏳</span> Looking up order…';
+      orderInput.classList.remove('input-error');
+      orderError.classList.remove('show');
+
+      try {
+        const response = await fetch(API_BASE + '/orders/' + encodeURIComponent(value));
+        const result = await response.json();
+
+        if (!response.ok) throw new Error(result.error || 'Unable to check order');
+
+        if (!result.found) {
+          orderValidated = false;
+          lastValidatedValue = '';
+          orderInput.classList.add('input-error');
+          clearOrderCheck();
+          orderErrorText.textContent = 'This order number was not found.';
+          orderError.classList.add('show');
+          return;
+        }
+
+        orderValidated = true;
+        lastValidatedValue = value;
+        orderInput.classList.remove('input-error');
+        orderError.classList.remove('show');
+
+        var alreadyCheckedIn = result.status && String(result.status).toUpperCase() === 'CHECKED IN';
+        orderCheck.className = 'order-check valid';
+        orderCheck.innerHTML = alreadyCheckedIn
+          ? '<span>✅</span> Order found — already checked in'
+          : '<span>✅</span> Order found — ready to check in';
+      } catch (err) {
+        console.error('Order lookup error:', err);
+        orderValidated = false;
+        lastValidatedValue = '';
+        clearOrderCheck();
+        orderInput.classList.add('input-error');
+        orderErrorText.textContent = 'Error checking order: ' + (err.message || 'try again');
+        orderError.classList.add('show');
+      }
+    }
+
+    function showToast(msg, isError) {
+      toastMessage.textContent = msg;
+      toastIcon.textContent = isError ? '⚠️' : '✅';
+      toast.classList.toggle('error', !!isError);
+      toast.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function() {
+        toast.classList.remove('show');
+      }, 2800);
+    }
+
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      var fields = [orderInput, nameInput, carrierInput, phoneInput, destinationInput];
+      var valid = true;
+
+      for (var i = 0; i < fields.length; i++) {
+        if (!fields[i].value.trim()) {
+          fields[i].style.borderColor = '#c2410c';
+          valid = false;
+        } else {
+          fields[i].style.borderColor = '';
+        }
+      }
+
+      if (phoneInput.value.replace(/\D/g, '').length < 7) {
+        phoneInput.style.borderColor = '#c2410c';
+        valid = false;
+      }
+
+      if (!valid) {
+        showToast('Please fill in all required fields', true);
+        return;
+      }
+
+      var orderNumber = orderInput.value.trim();
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying…';
+
+      if (!orderValidated || lastValidatedValue !== orderNumber) {
+        await lookupOrder();
+      }
+
+      if (!orderValidated) {
+        showToast('Order #' + orderNumber + ' not found — check-in denied', true);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Check in driver';
+        orderInput.focus();
+        return;
+      }
+
+      submitBtn.textContent = 'Saving…';
+
+      var driverData = {
+        Order: orderNumber,
+        driver_name: nameInput.value.trim(),
+        carrier: carrierInput.value.trim(),
+        phone: '+1 ' + phoneInput.value.trim(),
+        destination: destinationInput.value.trim(),
+        checkin_date: dateDisplay.textContent,
+        checkin_time: timestampDisplay.textContent
+      };
+
+      try {
+        const response = await fetch(API_BASE + '/check-in', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(driverData)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          showToast('Error saving — ' + (result.error || 'try again'), true);
+          return;
+        }
+
+        showToast('Check-in successful — Order #' + orderNumber + ' → CHECKED IN');
+        form.reset();
+        resetOrderValidation();
+        updateTimestamps();
+        for (var j = 0; j < fields.length; j++) {
+          fields[j].style.borderColor = '';
+        }
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        showToast('Network error — please try again', true);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Check in driver';
+      }
+    });
+
+    form.addEventListener('reset', function() {
+      setTimeout(function() {
+        updateTimestamps();
+        resetOrderValidation();
+        var fields = [orderInput, nameInput, carrierInput, phoneInput, destinationInput];
+        for (var i = 0; i < fields.length; i++) {
+          fields[i].style.borderColor = '';
+        }
+      }, 0);
+    });
+
+    updateTimestamps();
+    setInterval(updateTimestamps, 1000);
+  </script>
+</body>
+</html>
