@@ -10,6 +10,8 @@ Files:
 - package.json
 
 Comand:
+mkdir driver-checkin
+cd driver-checkin
 npm install <-- for dependencies
 npm start <-- to start
 npm stop  <-- to stop
