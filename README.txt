@@ -17,8 +17,8 @@ npm start <-- to start
 
 
 Then open:
-http://localhost:8000/index.html <-- changed it to your local ipv4. edit this in server.js
-http://localhost:8000/admin.html <-- to add orders that can check in, ADMIN PANEL
+http://localhost:1127/index.html <-- changed it to your local ipv4. edit this in server.js
+http://localhost:1127/admin.html <-- to add orders that can check in, ADMIN PANEL
 
 The database is:
 better-sqlite3
