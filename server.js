@@ -54,7 +54,7 @@ const SESSION_TTL_MINUTES = 60 * 8; // 8 hours
 app.use(express.json());
 app.use(express.static(__dirname));
 app.use(express.static('public'));
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 1127;
 
 // ═════════════════════════════════════════
 //  AUTH HELPERS
