@@ -464,5 +464,5 @@ app.delete('/api/orders', requireAuth, (req, res) => {
 //  START
 // ═════════════════════════════════════════
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Local driver check-in app running at http://192.168.1.222:${PORT}`);
+  console.log(`Local driver check-in app running at http://localhost:${PORT}`);
 });
