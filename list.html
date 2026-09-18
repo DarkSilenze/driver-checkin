@@ -212,8 +212,90 @@
       line-height: 1.65;
       display: flex;
       flex-direction: column;
+      gap: 0.2rem;
     }
     @media (min-width: 768px) { .checkin-meta { font-size: 0.92rem; } }
+
+    /* ---- Carrier & Trailer badges row (below date) ---- */
+    .tags-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.55rem;
+      margin-top: 0.6rem;
+    }
+
+    .carrier-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.32rem 0.8rem;
+      border-radius: 2rem;
+      white-space: nowrap;
+      letter-spacing: 0.01em;
+      background: #ede9fe;
+      color: #5b21b6;
+      line-height: 1.3;
+    }
+    @media (min-width: 768px) {
+      .carrier-badge { font-size: 0.92rem; padding: 0.38rem 0.9rem; }
+    }
+    .carrier-badge .badge-icon { font-size: 1em; line-height: 1; }
+    .carrier-badge .badge-label {
+      font-weight: 500;
+      opacity: 0.8;
+      font-size: 0.9em;
+    }
+    .carrier-badge .badge-value {
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.55);
+      padding: 0.08rem 0.5rem;
+      border-radius: 1rem;
+      font-size: 0.92em;
+    }
+    .carrier-badge .badge-value.muted {
+      background: transparent;
+      color: #7c7c9a;
+      font-weight: 500;
+    }
+
+    .trailer-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.32rem 0.8rem;
+      border-radius: 2rem;
+      white-space: nowrap;
+      letter-spacing: 0.01em;
+      background: #dcfce7;
+      color: #166534;
+      line-height: 1.3;
+    }
+    @media (min-width: 768px) {
+      .trailer-badge { font-size: 0.92rem; padding: 0.38rem 0.9rem; }
+    }
+    .trailer-badge .badge-icon { font-size: 1em; line-height: 1; }
+    .trailer-badge .badge-label {
+      font-weight: 500;
+      opacity: 0.8;
+      font-size: 0.9em;
+    }
+    .trailer-badge .badge-value {
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.55);
+      padding: 0.08rem 0.5rem;
+      border-radius: 1rem;
+      font-size: 0.92em;
+    }
+    .trailer-badge .badge-value.muted {
+      background: transparent;
+      color: #6b7280;
+      font-weight: 500;
+    }
 
     .checkin-times {
       display: flex;
@@ -545,37 +627,63 @@
       return result.drivers || [];
     }
 
-function buildItemHTML(row) {
-  var orderNum = row.Order !== undefined ? row.Order : (row.order || '');
-  var checkinTime = row.checkin_time || '';
-  var carrier = row.carrier || '';
-  var trailer = row.trailer || '';
+    // ----- buildItemHTML: carrier & trailer badges below the date, slightly bigger -----
+    function buildItemHTML(row) {
+      var orderNum = row.Order !== undefined ? row.Order : (row.order || '');
+      var checkinTime = row.checkin_time || '';
+      var carrier = row.carrier || '';
+      var trailer = row.trailer || '';
 
-  var checkinBadge = checkinTime
-    ? '<span class="time-badge checkin-time-badge"><span class="badge-icon">✅</span> <span class="badge-label">Check-in Time:</span> ' + escapeHtml(checkinTime) + '</span>'
-    : '<span class="time-badge checkin-time-badge"><span class="badge-icon">✅</span> <span class="badge-label">Check-in Time:</span> —</span>';
+      var checkinBadge = checkinTime
+        ? '<span class="time-badge checkin-time-badge"><span class="badge-icon">✅</span> <span class="badge-label">Check-in Time:</span> ' + escapeHtml(checkinTime) + '</span>'
+        : '<span class="time-badge checkin-time-badge"><span class="badge-icon">✅</span> <span class="badge-label">Check-in Time:</span> —</span>';
 
-  var carrierLine  = carrier ? '<span>🏢 ' + escapeHtml(carrier) + '</span>' : '<span>🏢 —</span>';
-  var trailerLine  = trailer ? '<span>🚚 Trailer #: ' + escapeHtml(trailer) + '</span>' : '<span>🚚 Trailer #: —</span>';
+      // Carrier badge
+      var carrierValue = carrier
+        ? '<span class="badge-value">' + escapeHtml(carrier) + '</span>'
+        : '<span class="badge-value muted">—</span>';
+      var carrierBadge =
+        '<span class="carrier-badge">' +
+          '<span class="badge-icon">🏢</span>' +
+          '<span class="badge-label">Carrier</span>' +
+          carrierValue +
+        '</span>';
 
-  return '' +
-    '<div class="checkin-item" data-id="' + row.id + '">' +
-      '<button class="remove-btn" onclick="requestRemove(' + row.id + ')" title="Remove driver" aria-label="Remove driver">✕</button>' +
-      '<div class="checkin-avatar">' + getInitials(row.driver_name) + '</div>' +
-      '<div class="checkin-info">' +
-        '<div class="checkin-order">#' + escapeHtml(orderNum) + '</div>' +
-        '<div class="checkin-name">' + escapeHtml(row.driver_name) + '</div>' +
-        '<div class="checkin-meta">' +
-          carrierLine +
-          trailerLine +
-          '<span>📞 ' + escapeHtml(row.phone) + '</span>' +
-          '<span>📍 ' + escapeHtml(row.destination) + '</span>' +
-          '<span>📅 ' + escapeHtml(row.checkin_date || '') + '</span>' +
-        '</div>' +
-      '</div>' +
-      '<div class="checkin-times">' + checkinBadge + '</div>' +
-    '</div>';
-}
+      // Trailer badge
+      var trailerValue = trailer
+        ? '<span class="badge-value">' + escapeHtml(trailer) + '</span>'
+        : '<span class="badge-value muted">—</span>';
+      var trailerBadge =
+        '<span class="trailer-badge">' +
+          '<span class="badge-icon">🚚</span>' +
+          '<span class="badge-label">Trailer #</span>' +
+          trailerValue +
+        '</span>';
+
+      // Tags row placed below the date
+      var tagsRow =
+        '<div class="tags-row">' +
+          carrierBadge +
+          trailerBadge +
+        '</div>';
+
+      return '' +
+        '<div class="checkin-item" data-id="' + row.id + '">' +
+          '<button class="remove-btn" onclick="requestRemove(' + row.id + ')" title="Remove driver" aria-label="Remove driver">✕</button>' +
+          '<div class="checkin-avatar">' + getInitials(row.driver_name) + '</div>' +
+          '<div class="checkin-info">' +
+            '<div class="checkin-order">#' + escapeHtml(orderNum) + '</div>' +
+            '<div class="checkin-name">' + escapeHtml(row.driver_name) + '</div>' +
+            '<div class="checkin-meta">' +
+              '<span>📞 ' + escapeHtml(row.phone) + '</span>' +
+              '<span>📍 ' + escapeHtml(row.destination) + '</span>' +
+              '<span>📅 ' + escapeHtml(row.checkin_date || '') + '</span>' +
+            '</div>' +
+            tagsRow +
+          '</div>' +
+          '<div class="checkin-times">' + checkinBadge + '</div>' +
+        '</div>';
+    }
 
     async function renderList() {
       if (isLoading) return;
