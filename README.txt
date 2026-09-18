@@ -23,5 +23,6 @@ The database is:
 better-sqlite3
 database.db
 
+Default login: admin / admin123
 Default PIN : 1234
 
