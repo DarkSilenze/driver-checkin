@@ -38,6 +38,13 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expires_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Seed the default PIN if it doesn't exist yet
@@ -46,6 +53,18 @@ db.exec(`
   if (!row) {
     db.prepare(`INSERT INTO settings (key, value) VALUES ('pin', ?)`).run('1234');
     console.log('Initialized default PIN: 1234');
+  }
+})();
+
+// Seed a default admin user if none exists
+(function seedDefaultUser() {
+  const row = db.prepare(`SELECT COUNT(*) AS c FROM users`).get();
+  if (row.c === 0) {
+    const defaultUser = 'admin';
+    const defaultPass = 'admin123';
+    const hash = crypto.createHash('sha256').update(defaultPass).digest('hex');
+    db.prepare(`INSERT INTO users (username, password_hash) VALUES (?, ?)`).run(defaultUser, hash);
+    console.log(`Initialized default user: ${defaultUser} / ${defaultPass} (change this!)`);
   }
 })();
 
@@ -63,6 +82,10 @@ const PORT = process.env.PORT || 1127;
 function getPin() {
   const row = db.prepare(`SELECT value FROM settings WHERE key = 'pin'`).get();
   return row ? row.value : '1234';
+}
+
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(String(password)).digest('hex');
 }
 
 function issueToken() {
@@ -101,6 +124,57 @@ setInterval(function() {
 //  AUTH ROUTES
 // ═════════════════════════════════════════
 
+// ── USER LOGIN (used by index.html admin button) ──
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body || {};
+
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password are required.' });
+  }
+
+  try {
+    const user = db.prepare(`SELECT * FROM users WHERE username = ?`).get(String(username).trim());
+
+    if (!user || user.password_hash !== hashPassword(password)) {
+      return res.status(401).json({ error: 'Invalid username or password.' });
+    }
+
+    const token = issueToken();
+    res.json({ token, username: user.username });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Unable to log in.' });
+  }
+});
+
+// ── CHANGE PASSWORD ──
+app.post('/api/change-password', requireAuth, (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Current and new password are required.' });
+  }
+  if (String(newPassword).length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+  }
+
+  try {
+    const user = db.prepare(`SELECT * FROM users ORDER BY id LIMIT 1`).get();
+
+    if (!user || user.password_hash !== hashPassword(currentPassword)) {
+      // 403 = authenticated but the provided credential is wrong (NOT a session issue)
+      return res.status(403).json({ error: 'Current password is incorrect.' });
+    }
+
+    db.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`).run(hashPassword(newPassword), user.id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Unable to change password.' });
+  }
+});
+
+// ── PIN VERIFY (kept for backwards compatibility) ──
 app.post('/api/pin/verify', (req, res) => {
   const { pin } = req.body || {};
   if (!pin || !/^\d{4}$/.test(String(pin))) {
@@ -109,6 +183,7 @@ app.post('/api/pin/verify', (req, res) => {
   res.json({ valid: String(pin) === getPin() });
 });
 
+// ── PIN LOGIN (kept for backwards compatibility) ──
 app.post('/api/pin/login', (req, res) => {
   const { pin } = req.body || {};
   if (!pin || !/^\d{4}$/.test(String(pin))) {
@@ -141,7 +216,8 @@ app.post('/api/pin/change', requireAuth, (req, res) => {
   try {
     const stored = getPin();
     if (String(currentPin) !== stored) {
-      return res.status(401).json({ error: 'Current PIN is incorrect.' });
+      // 403 = authenticated but the provided PIN is wrong (NOT a session issue)
+      return res.status(403).json({ error: 'Current PIN is incorrect.' });
     }
 
     db.prepare(`UPDATE settings SET value = ? WHERE key = 'pin'`).run(String(newPin));
@@ -465,4 +541,6 @@ app.delete('/api/orders', requireAuth, (req, res) => {
 // ═════════════════════════════════════════
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Local driver check-in app running at http://localhost:${PORT}`);
+  console.log(`Default login: admin / admin123`);
+  console.log(`Default PIN: 1234`);
 });

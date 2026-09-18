@@ -121,34 +121,32 @@
     .pin-modal h3 { font-size: 1.15rem; font-weight: 600; color: #0f172a; margin-bottom: 0.4rem; }
     .pin-modal p { font-size: 0.88rem; color: #64748b; margin-bottom: 1.5rem; line-height: 1.5; }
 
-    .pin-input-wrap { display: flex; justify-content: center; gap: 0.6rem; margin-bottom: 0.9rem; }
-    .pin-digit {
-      width: 52px;
-      height: 60px;
-      text-align: center;
-      font-size: 1.5rem;
-      font-weight: 600;
-      font-family: 'Inter', system-ui, sans-serif;
-      color: #0f172a;
+    .login-field {
+      text-align: left;
+      margin-bottom: 1rem;
+    }
+    .login-field label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #1e293b;
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+    .login-field input {
+      width: 100%;
+      font-family: 'Inter', sans-serif;
       border: 1.5px solid #e2e8f0;
       border-radius: 0.9rem;
+      padding: 0.8rem 1rem;
+      font-size: 0.95rem;
+      color: #0f172a;
       outline: none;
-      transition: all 0.2s;
-      background: #f8fafc;
-      caret-color: #0b3b5c;
-      -webkit-appearance: none;
-      appearance: none;
-    }
-    .pin-digit:focus {
-      border-color: #0b3b5c;
+      transition: 0.2s;
       background: #fff;
-      box-shadow: 0 0 0 4px rgba(11, 59, 92, 0.08);
     }
-    .pin-digit.filled { background: #fff; border-color: #0b3b5c; }
-
-    @media (max-width: 400px) {
-      .pin-digit { width: 44px; height: 54px; font-size: 1.3rem; }
-      .pin-input-wrap { gap: 0.45rem; }
+    .login-field input:focus {
+      border-color: #0b3b5c;
+      box-shadow: 0 0 0 4px rgba(11, 59, 92, 0.08);
     }
 
     .pin-error {
@@ -180,6 +178,7 @@
     .pin-actions .btn:hover, .pin-actions .btn:active { background: #f8fafc; }
     .pin-actions .btn-primary { background: #0b3b5c; border-color: #0b3b5c; color: #fff; }
     .pin-actions .btn-primary:hover, .pin-actions .btn-primary:active { background: #0a2f4a; }
+    .pin-actions .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .pin-modal.shake { animation: shake 0.4s ease; }
     @keyframes shake {
@@ -213,69 +212,77 @@
     </div>
   </div>
 
-  <div class="pin-overlay" id="pinOverlay">
-    <div class="pin-modal" id="pinModal">
-      <div class="pin-icon">🔒</div>
-      <h3>Admin access</h3>
-      <p>Enter your 4-digit PIN to continue.</p>
+  <div class="pin-overlay" id="loginOverlay">
+    <div class="pin-modal" id="loginModal">
+      <div class="pin-icon">🔐</div>
+      <h3>Admin login</h3>
+      <p>Enter your credentials to continue.</p>
 
-      <div class="pin-input-wrap">
-        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
-        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
-        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
-        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
+      <div class="login-field">
+        <label for="loginUsername">Username</label>
+        <input type="text" id="loginUsername" placeholder="admin" autocomplete="username">
       </div>
 
-      <div class="pin-error" id="pinError">Incorrect PIN. Try again.</div>
+      <div class="login-field">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+      </div>
+
+      <div class="pin-error" id="loginError">Invalid username or password.</div>
 
       <div class="pin-actions">
-        <button class="btn" id="pinCancelBtn">Cancel</button>
-        <button class="btn btn-primary" id="pinConfirmBtn">Confirm</button>
+        <button class="btn" id="loginCancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="loginConfirmBtn">Login</button>
       </div>
     </div>
   </div>
 
   <script>
     var adminBtn = document.getElementById('adminBtn');
-    var pinOverlay = document.getElementById('pinOverlay');
-    var pinModal = document.getElementById('pinModal');
-    var pinError = document.getElementById('pinError');
-    var pinCancelBtn = document.getElementById('pinCancelBtn');
-    var pinConfirmBtn = document.getElementById('pinConfirmBtn');
-    var pinDigits = document.querySelectorAll('.pin-digit');
+    var loginOverlay = document.getElementById('loginOverlay');
+    var loginModal = document.getElementById('loginModal');
+    var loginError = document.getElementById('loginError');
+    var loginCancelBtn = document.getElementById('loginCancelBtn');
+    var loginConfirmBtn = document.getElementById('loginConfirmBtn');
+    var loginUsername = document.getElementById('loginUsername');
+    var loginPassword = document.getElementById('loginPassword');
 
-    var pinBuffer = ['', '', '', ''];
+    function clearLoginForm() {
+      loginUsername.value = '';
+      loginPassword.value = '';
+      loginError.classList.remove('show');
+      loginModal.classList.remove('shake');
+    }
 
-    function clearPinInputs() {
-      pinBuffer = ['', '', '', ''];
-      for (var i = 0; i < pinDigits.length; i++) {
-        pinDigits[i].value = '';
-        pinDigits[i].classList.remove('filled');
+    function openLoginModal() {
+      clearLoginForm();
+      loginOverlay.classList.add('show');
+      setTimeout(function() { loginUsername.focus(); }, 100);
+    }
+
+    function closeLoginModal() {
+      loginOverlay.classList.remove('show');
+      clearLoginForm();
+    }
+
+    async function doLogin() {
+      var username = loginUsername.value.trim();
+      var password = loginPassword.value;
+
+      if (!username || !password) {
+        loginError.textContent = 'Please enter both username and password.';
+        loginError.classList.add('show');
+        return;
       }
-      pinError.classList.remove('show');
-      pinModal.classList.remove('shake');
-    }
 
-    function openPinModal() {
-      clearPinInputs();
-      pinOverlay.classList.add('show');
-      setTimeout(function() { pinDigits[0].focus(); }, 100);
-    }
-
-    function closePinModal() {
-      pinOverlay.classList.remove('show');
-      clearPinInputs();
-    }
-
-    async function verifyPin() {
-      var entered = pinBuffer.join('');
-      if (entered.length !== 4) return;
+      loginConfirmBtn.disabled = true;
+      loginConfirmBtn.textContent = 'Logging in…';
 
       try {
-        const response = await fetch('/api/pin/login', {
+        const response = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pin: entered })
+          body: JSON.stringify({ username: username, password: password })
         });
         const result = await response.json();
 
@@ -283,78 +290,36 @@
           localStorage.setItem('adminToken', result.token);
           window.location.href = 'admin.html';
         } else {
-          pinError.textContent = result.error || 'Incorrect PIN. Try again.';
-          pinError.classList.add('show');
-          pinModal.classList.add('shake');
-          setTimeout(function() { pinModal.classList.remove('shake'); }, 400);
+          loginError.textContent = result.error || 'Invalid username or password.';
+          loginError.classList.add('show');
+          loginModal.classList.add('shake');
+          setTimeout(function() { loginModal.classList.remove('shake'); }, 400);
           setTimeout(function() {
-            clearPinInputs();
-            pinDigits[0].focus();
+            loginPassword.value = '';
+            loginPassword.focus();
           }, 500);
         }
       } catch (err) {
-        console.error('PIN login error:', err);
-        pinError.textContent = 'Network error — is the server running?';
-        pinError.classList.add('show');
-        setTimeout(function() {
-          clearPinInputs();
-          pinDigits[0].focus();
-        }, 800);
+        console.error('Login error:', err);
+        loginError.textContent = 'Network error — is the server running?';
+        loginError.classList.add('show');
+      } finally {
+        loginConfirmBtn.disabled = false;
+        loginConfirmBtn.textContent = 'Login';
       }
     }
 
-    for (var i = 0; i < pinDigits.length; i++) {
-      (function(idx) {
-        var input = pinDigits[idx];
-
-        input.addEventListener('input', function() {
-          var val = this.value.replace(/\D/g, '');
-          this.value = val.charAt(0);
-          pinBuffer[idx] = this.value;
-          this.classList.toggle('filled', !!this.value);
-
-          if (this.value && idx < pinDigits.length - 1) {
-            pinDigits[idx + 1].focus();
-          }
-
-          if (pinBuffer.every(function(d) { return d; })) {
-            setTimeout(verifyPin, 120);
-          }
-        });
-
-        input.addEventListener('keydown', function(e) {
-          if (e.key === 'Backspace' && !this.value && idx > 0) {
-            pinDigits[idx - 1].focus();
-            pinDigits[idx - 1].value = '';
-            pinBuffer[idx - 1] = '';
-            pinDigits[idx - 1].classList.remove('filled');
-          }
-          if (e.key === 'Enter') verifyPin();
-        });
-
-        input.addEventListener('paste', function(e) {
-          e.preventDefault();
-          var pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
-          for (var p = 0; p < 4; p++) {
-            pinBuffer[p] = pasted.charAt(p) || '';
-            pinDigits[p].value = pinBuffer[p];
-            pinDigits[p].classList.toggle('filled', !!pinBuffer[p]);
-          }
-          if (pasted.length >= 4) setTimeout(verifyPin, 120);
-        });
-      })(i);
-    }
-
-    pinConfirmBtn.addEventListener('click', verifyPin);
-    pinCancelBtn.addEventListener('click', closePinModal);
-    pinOverlay.addEventListener('click', function(e) {
-      if (e.target === pinOverlay) closePinModal();
+    loginConfirmBtn.addEventListener('click', doLogin);
+    loginCancelBtn.addEventListener('click', closeLoginModal);
+    loginOverlay.addEventListener('click', function(e) {
+      if (e.target === loginOverlay) closeLoginModal();
     });
     document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape' && pinOverlay.classList.contains('show')) closePinModal();
+      if (e.key === 'Escape' && loginOverlay.classList.contains('show')) closeLoginModal();
+      if (e.key === 'Enter' && loginOverlay.classList.contains('show')) doLogin();
     });
 
-    adminBtn.addEventListener('click', openPinModal);
+    adminBtn.addEventListener('click', openLoginModal);
   </script>
 </body>
 </html>
