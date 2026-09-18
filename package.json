@@ -4,8 +4,6 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "stop": "node stop.js",
-    "restart": "npm stop && npm start"
   },
   "allowScripts": {
     "better-sqlite3": true
