@@ -7,7 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
   <style>
+    
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
@@ -158,54 +160,55 @@
       box-shadow: 0 0 0 4px rgba(11, 59, 92, 0.08);
     }
 
-    textarea {
-      font-family: 'Inter', sans-serif;
+    /* ── Compact file picker ── */
+    .compact-file-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: #f8fafc;
       border: 1.5px solid #e2e8f0;
       border-radius: 0.9rem;
-      padding: 0.8rem 1rem;
-      font-size: 0.95rem;
-      color: #0f172a;
-      width: 100%;
-      outline: none;
+      padding: 0.35rem 0.35rem 0.35rem 1rem;
       transition: 0.2s;
-      resize: vertical;
-      min-height: 160px;
-      line-height: 1.5;
     }
-
-    textarea:focus {
-      border-color: #0b3b5c;
-      box-shadow: 0 0 0 4px rgba(11, 59, 92, 0.08);
+    .compact-file-row:hover {
+      border-color: #cbd5e1;
+      background: #f1f5f9;
     }
-
-    .pin-input-wrap {
-      display: flex;
-      gap: 0.5rem;
-    }
-    .pin-digit-input {
+    .compact-file-row .file-label {
+      font-size: 0.85rem;
+      color: #475569;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       flex: 1;
-      text-align: center;
-      font-size: 1.3rem !important;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      padding: 0.7rem 0.5rem !important;
-      font-family: 'Inter', sans-serif;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 0.8rem;
-      background: #f8fafc;
-      color: #0f172a;
-      outline: none;
-      transition: 0.2s;
       min-width: 0;
+      font-weight: 400;
     }
-    .pin-digit-input:focus {
-      border-color: #0b3b5c;
-      background: #fff;
-      box-shadow: 0 0 0 4px rgba(11, 59, 92, 0.08);
+    .compact-file-row .file-label.has-file {
+      color: #0b3b5c;
+      font-weight: 500;
     }
-    .pin-digit-input.filled {
-      background: #fff;
-      border-color: #0b3b5c;
+    .compact-file-btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 0.55rem 1rem;
+      border: none;
+      border-radius: 0.7rem;
+      background: #0b3b5c;
+      color: #fff;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: 0.15s;
+      flex-shrink: 0;
+      min-height: 38px;
+    }
+    .compact-file-btn:hover {
+      background: #0a2f4a;
+    }
+    .compact-file-input {
+      display: none;
     }
 
     .btn-primary {
@@ -436,6 +439,35 @@
     }
     .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     .toast.error { background: #b91c1c; }
+
+    .pin-input-wrap {
+      display: flex;
+      gap: 0.6rem;
+      justify-content: flex-start;
+    }
+    .pin-digit-input {
+      width: 3.2rem;
+      height: 3.2rem;
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 600;
+      border: 2px solid #e2e8f0;
+      border-radius: 0.9rem;
+      background: #fff;
+      color: #0f172a;
+      outline: none;
+      transition: 0.2s;
+      font-family: 'Inter', sans-serif;
+      padding: 0;
+    }
+    .pin-digit-input:focus {
+      border-color: #0b3b5c;
+      box-shadow: 0 0 0 4px rgba(11, 59, 92, 0.08);
+    }
+    .pin-digit-input.filled {
+      border-color: #0b3b5c;
+      background: #f0f7ff;
+    }
   </style>
 </head>
 <body>
@@ -451,48 +483,41 @@
     </div>
 
     <div class="tabs">
-      <button class="tab active" data-tab="add">➕ Add</button>
-      <button class="tab" data-tab="bulk">📚 Bulk</button>
+      <button class="tab active" data-tab="upload">📤 Upload</button>
       <button class="tab" data-tab="remove">🗑️ Remove</button>
       <button class="tab" data-tab="pin">🔐 PIN</button>
       <button class="tab" data-tab="password">🔑 Password</button>
     </div>
 
-    <div class="panel active" id="panel-add">
-      <div class="form-group">
-        <label for="order">Order # <span class="required-star">*</span></label>
-        <input type="text" id="order" placeholder="330012345" autocomplete="off" inputmode="numeric">
+    <!-- ── UPLOAD EXCEL PANEL (compact file picker) ── -->
+    <div class="panel active" id="panel-upload">
+      <div class="pin-info">
+        <strong>ℹ️ Note:</strong> Upload an Excel file (.xlsx, .xls) or CSV</strong>.
       </div>
 
       <div class="form-group">
-        <label for="status">Status</label>
-        <input type="text" id="status" value="PENDING" placeholder="PENDING">
+        <label>Excel / CSV file <span class="required-star">*</span></label>
+
+        <!-- Compact file picker row -->
+        <div class="compact-file-row" id="compactFileRow">
+          <span class="file-label" id="fileLabel">No file chosen</span>
+          <button class="compact-file-btn" id="pickFileBtn" type="button">Choose file</button>
+          <input type="file" class="compact-file-input" id="excelFileInput" accept=".xlsx, .xls, .csv">
+        </div>
+
+        <div class="hint">Must contain a header row with a column named "Order". Only those values will be imported.</div>
       </div>
 
-      <button class="btn-primary" id="submitBtn">Add order</button>
+      <div class="bulk-summary" id="uploadSummary">
+        <div class="stat"><span>Valid order numbers:</span><span class="valid" id="uploadValid">0</span></div>
+        <div class="stat"><span>Duplicates in file:</span><span class="dup" id="uploadDup">0</span></div>
+        <div class="stat"><span>Invalid / empty:</span><span class="invalid" id="uploadInvalid">0</span></div>
+      </div>
+
+      <button class="btn-primary" id="uploadSubmitBtn" disabled>Import orders</button>
     </div>
 
-    <div class="panel" id="panel-bulk">
-      <div class="form-group">
-        <label for="bulkOrders">Order #s <span class="required-star">*</span></label>
-        <textarea id="bulkOrders" placeholder="330012345&#10;330012346&#10;330012347&#10;&#10;One per line, or paste comma/space separated"></textarea>
-        <div class="hint">Paste one order per line. Commas, spaces, and tabs are also accepted.</div>
-      </div>
-
-      <div class="bulk-summary" id="bulkSummary">
-        <div class="stat"><span>Valid numbers:</span><span class="valid" id="bulkValid">0</span></div>
-        <div class="stat"><span>Duplicates in list:</span><span class="dup" id="bulkDup">0</span></div>
-        <div class="stat"><span>Invalid (non-numeric):</span><span class="invalid" id="bulkInvalid">0</span></div>
-      </div>
-
-      <div class="form-group">
-        <label for="bulkStatus">Status</label>
-        <input type="text" id="bulkStatus" value="PENDING" placeholder="PENDING">
-      </div>
-
-      <button class="btn-primary" id="bulkSubmitBtn">Add all orders</button>
-    </div>
-
+    <!-- ── REMOVE PANEL ── -->
     <div class="panel" id="panel-remove">
       <div class="form-group">
         <label for="removeOrderInput">Order # <span class="required-star">*</span></label>
@@ -517,6 +542,7 @@
       </div>
     </div>
 
+    <!-- ── PIN PANEL ── -->
     <div class="panel" id="panel-pin">
       <div class="pin-info">
         <strong>ℹ️ Note:</strong> The PIN is used on the driver list page to protect <em>Remove</em> and <em>Clear all</em> actions.
@@ -545,6 +571,7 @@
       <button class="btn-primary" id="changePinBtn">Change PIN</button>
     </div>
 
+    <!-- ── PASSWORD PANEL ── -->
     <div class="panel" id="panel-password">
       <div class="pin-info">
         <strong>ℹ️ Note:</strong> Change the admin login password here. Minimum 6 characters.
@@ -596,8 +623,6 @@
       var opts = options || {};
       opts.headers = authHeaders(opts.headers);
       var res = await fetch(url, opts);
-      // Only 401 means the session itself is invalid/expired.
-      // 403 means "authenticated, but the provided credential is wrong" — do NOT log out.
       if (res.status === 401) {
         localStorage.removeItem(TOKEN_KEY);
         alert('Session expired. Please log in again.');
@@ -618,21 +643,21 @@
     // ─────────────────────────────────────────
     //  ELEMENTS
     // ─────────────────────────────────────────
-    var orderInput = document.getElementById('order');
-    var statusInput = document.getElementById('status');
-    var submitBtn = document.getElementById('submitBtn');
     var toast = document.getElementById('toast');
     var toastIcon = document.getElementById('toastIcon');
     var toastMessage = document.getElementById('toastMessage');
 
-    var bulkOrders = document.getElementById('bulkOrders');
-    var bulkStatus = document.getElementById('bulkStatus');
-    var bulkSubmitBtn = document.getElementById('bulkSubmitBtn');
-    var bulkSummary = document.getElementById('bulkSummary');
-    var bulkValid = document.getElementById('bulkValid');
-    var bulkDup = document.getElementById('bulkDup');
-    var bulkInvalid = document.getElementById('bulkInvalid');
+    // Upload elements (compact picker)
+    var fileLabel = document.getElementById('fileLabel');
+    var pickFileBtn = document.getElementById('pickFileBtn');
+    var excelFileInput = document.getElementById('excelFileInput');
+    var uploadSubmitBtn = document.getElementById('uploadSubmitBtn');
+    var uploadSummary = document.getElementById('uploadSummary');
+    var uploadValid = document.getElementById('uploadValid');
+    var uploadDup = document.getElementById('uploadDup');
+    var uploadInvalid = document.getElementById('uploadInvalid');
 
+    // Remove elements
     var removeOrderInput = document.getElementById('removeOrderInput');
     var removeOrderBtn = document.getElementById('removeOrderBtn');
     var removeAllOrdersBtn = document.getElementById('removeAllOrdersBtn');
@@ -676,135 +701,182 @@
     }
 
     // ─────────────────────────────────────────
-    //  ADD ORDER
+    //  COMPACT FILE PICKER & EXCEL PARSING
     // ─────────────────────────────────────────
-    async function addOrder() {
-      var orderVal = orderInput.value.trim();
-      var statusVal = statusInput.value.trim() || 'PENDING';
+    var parsedOrderNumbers = []; // stores valid unique order numbers
 
-      if (!orderVal) { showToast('Order # is required', true); orderInput.focus(); return; }
-      if (!/^\d+$/.test(orderVal)) { showToast('Order # must be numeric', true); orderInput.focus(); return; }
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Saving…';
-
-      try {
-        const r = await authFetch('/api/orders', {
-          method: 'POST',
-          body: JSON.stringify({ Order: orderVal, Status: statusVal })
-        });
-        const j = await r.json().catch(function() { return {}; });
-        if (!r.ok) { showToast(j.error || 'Unable to save order', true); return; }
-
-        showToast('Order #' + orderVal + ' added');
-        orderInput.value = '';
-        orderInput.focus();
-      } catch (err) {
-        if (err.message !== 'Unauthorized') {
-          console.error(err);
-          showToast('Network error — is the server running?', true);
-        }
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Add order';
-      }
+    function resetUploadState() {
+      parsedOrderNumbers = [];
+      fileLabel.textContent = 'No file chosen';
+      fileLabel.classList.remove('has-file');
+      uploadSummary.classList.remove('show');
+      uploadValid.textContent = '0';
+      uploadDup.textContent = '0';
+      uploadInvalid.textContent = '0';
+      uploadSubmitBtn.disabled = true;
+      excelFileInput.value = '';
     }
 
-    submitBtn.addEventListener('click', addOrder);
-    [orderInput, statusInput].forEach(function(el) {
-      el.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') { e.preventDefault(); addOrder(); }
-      });
+    // Trigger hidden file input when button clicked
+    pickFileBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      excelFileInput.click();
     });
 
-    // ─────────────────────────────────────────
-    //  BULK ADD
-    // ─────────────────────────────────────────
-    function parseBulkInput(raw) {
-      var tokens = raw.split(/[\s,;]+/).map(function(t) { return t.trim(); }).filter(Boolean);
-      var seen = {};
-      var valid = [];
-      var duplicates = 0;
-      var invalid = [];
+  
 
-      tokens.forEach(function(tok) {
-        if (!/^\d+$/.test(tok)) { invalid.push(tok); return; }
-        if (seen[tok]) { duplicates++; return; }
-        seen[tok] = true;
-        valid.push(tok);
-      });
+    // Handle file selection via input
+    excelFileInput.addEventListener('change', function(e) {
+      var file = e.target.files[0];
+      if (!file) { resetUploadState(); return; }
+      processExcelFile(file);
+    });
 
-      return { valid: valid, duplicates: duplicates, invalid: invalid };
-    }
-
-    function updateBulkSummary() {
-      var parsed = parseBulkInput(bulkOrders.value);
-      if (!bulkOrders.value.trim()) { bulkSummary.classList.remove('show'); return; }
-      bulkSummary.classList.add('show');
-      bulkValid.textContent = parsed.valid.length;
-      bulkDup.textContent = parsed.duplicates;
-      bulkInvalid.textContent = parsed.invalid.length;
-    }
-
-    bulkOrders.addEventListener('input', updateBulkSummary);
-
-    async function addBulkOrders() {
-      var parsed = parseBulkInput(bulkOrders.value);
-      if (parsed.valid.length === 0) {
-        showToast('No valid order numbers to add', true);
-        bulkOrders.focus();
+    function processExcelFile(file) {
+      var name = file.name;
+      if (!/\.(xlsx|xls|csv)$/i.test(name)) {
+        showToast('Please upload an .xlsx, .xls, or .csv file', true);
+        resetUploadState();
         return;
       }
 
-      var statusVal = bulkStatus.value.trim() || 'PENDING';
-      bulkSubmitBtn.disabled = true;
-      bulkSubmitBtn.textContent = 'Adding 0/' + parsed.valid.length + '…';
+      // Update compact label
+      fileLabel.textContent = name;
+      fileLabel.classList.add('has-file');
 
-      var success = 0;
-      var failed = 0;
-      var firstError = '';
-
-      for (var i = 0; i < parsed.valid.length; i++) {
-        var orderVal = parsed.valid[i];
-        bulkSubmitBtn.textContent = 'Adding ' + (i + 1) + '/' + parsed.valid.length + '…';
-
+      var reader = new FileReader();
+      reader.onload = function(e) {
         try {
-          const r = await authFetch('/api/orders', {
-            method: 'POST',
-            body: JSON.stringify({ Order: orderVal, Status: statusVal })
+          var data = new Uint8Array(e.target.result);
+          var workbook = XLSX.read(data, { type: 'array' });
+          var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          var rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+
+          if (!rows.length) {
+            showToast('The file is empty', true);
+            resetUploadState();
+            return;
+          }
+
+          // Find header row and locate "Order" column
+          var headerRow = rows[0];
+          var orderColIndex = -1;
+          for (var i = 0; i < headerRow.length; i++) {
+            var cell = String(headerRow[i] || '').trim().toLowerCase();
+            if (cell === 'order') { orderColIndex = i; break; }
+          }
+
+          if (orderColIndex === -1) {
+            showToast('No column named "Order" found in the first row', true);
+            resetUploadState();
+            return;
+          }
+
+          // Extract order numbers from the Order column (skip header)
+          var rawOrders = [];
+          for (var r = 1; r < rows.length; r++) {
+            var val = rows[r][orderColIndex];
+            if (val !== undefined && val !== null && String(val).trim() !== '') {
+              rawOrders.push(String(val).trim());
+            }
+          }
+
+          // Analyze: valid numeric, duplicates, invalid
+          var seen = {};
+          var valid = [];
+          var duplicates = 0;
+          var invalid = [];
+
+          rawOrders.forEach(function(tok) {
+            if (!/^\d+$/.test(tok)) {
+              invalid.push(tok);
+              return;
+            }
+            if (seen[tok]) {
+              duplicates++;
+              return;
+            }
+            seen[tok] = true;
+            valid.push(tok);
           });
-          if (r.ok) {
-            success++;
+
+          parsedOrderNumbers = valid;
+
+          // Show summary
+          uploadSummary.classList.add('show');
+          uploadValid.textContent = valid.length;
+          uploadDup.textContent = duplicates;
+          uploadInvalid.textContent = invalid.length;
+
+          if (valid.length === 0) {
+            uploadSubmitBtn.disabled = true;
+            showToast('No valid numeric order numbers found', true);
           } else {
-            failed++;
-            const j = await r.json().catch(function() { return {}; });
-            if (!firstError) firstError = j.error || ('Order #' + orderVal + ' failed');
+            uploadSubmitBtn.disabled = false;
+            showToast('Found ' + valid.length + ' order(s) ready to import');
           }
         } catch (err) {
-          if (err.message === 'Unauthorized') return;
-          failed++;
-          if (!firstError) firstError = 'Network error on #' + orderVal;
+          console.error(err);
+          showToast('Failed to parse file: ' + err.message, true);
+          resetUploadState();
         }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // Import orders via bulk endpoint
+    async function importOrdersFromExcel() {
+      if (!parsedOrderNumbers.length) {
+        showToast('No valid orders to import', true);
+        return;
       }
 
-      bulkSubmitBtn.disabled = false;
-      bulkSubmitBtn.textContent = 'Add all orders';
+      uploadSubmitBtn.disabled = true;
+      uploadSubmitBtn.textContent = 'Importing 0/' + parsedOrderNumbers.length + '…';
 
-      if (success > 0 && failed === 0) {
-        showToast('Added ' + success + ' order' + (success === 1 ? '' : 's'));
-        bulkOrders.value = '';
-        updateBulkSummary();
-      } else if (success > 0 && failed > 0) {
-        showToast('Added ' + success + ', failed ' + failed + ' — ' + firstError, true);
-      } else {
-        showToast('All failed — ' + firstError, true);
+      var ordersPayload = parsedOrderNumbers.map(function(num) {
+        return { Order: num, Status: 'PENDING' };
+      });
+
+      try {
+        const r = await authFetch('/api/orders/bulk', {
+          method: 'POST',
+          body: JSON.stringify({ orders: ordersPayload })
+        });
+        const j = await r.json().catch(function() { return {}; });
+
+        if (!r.ok) {
+          showToast(j.error || 'Unable to import orders', true);
+          return;
+        }
+
+        var inserted = j.inserted || 0;
+        var skipped = j.skipped || 0;
+
+        if (inserted > 0) {
+          showToast('Imported ' + inserted + ' order(s)' + (skipped ? ', ' + skipped + ' skipped (already exist)' : ''));
+          resetUploadState();
+          // Refresh the orders list if visible
+          if (document.getElementById('panel-remove').classList.contains('active')) {
+            loadOrders();
+          }
+        } else {
+          showToast('No new orders added. ' + (skipped ? skipped + ' already exist.' : ''), true);
+        }
+      } catch (err) {
+        if (err.message === 'Unauthorized') return;
+        console.error(err);
+        showToast('Network error — is the server running?', true);
+      } finally {
+        uploadSubmitBtn.disabled = false;
+        uploadSubmitBtn.textContent = 'Import orders';
       }
     }
 
-    bulkSubmitBtn.addEventListener('click', addBulkOrders);
+    uploadSubmitBtn.addEventListener('click', importOrdersFromExcel);
 
     // ─────────────────────────────────────────
-    //  LOAD ORDERS
+    //  LOAD ORDERS (for remove panel)
     // ─────────────────────────────────────────
     async function loadOrders() {
       ordersList.innerHTML = '<div class="orders-empty"><span class="emoji">⏳</span>Loading orders…</div>';
@@ -830,7 +902,7 @@
       ordersCount.textContent = orders.length + ' order' + (orders.length === 1 ? '' : 's');
 
       if (!orders.length) {
-        ordersList.innerHTML = '<div class="orders-empty"><span class="emoji">📭</span>No orders yet.<br>Add one from the <strong>Add order</strong> tab.</div>';
+        ordersList.innerHTML = '<div class="orders-empty"><span class="emoji">📭</span>No orders yet.<br>Upload an Excel file from the <strong>Upload</strong> tab.</div>';
         return;
       }
 
@@ -888,7 +960,7 @@
             var remaining = ordersList.querySelectorAll('.order-row').length;
             ordersCount.textContent = remaining + ' order' + (remaining === 1 ? '' : 's');
             if (remaining === 0) {
-              ordersList.innerHTML = '<div class="orders-empty"><span class="emoji">📭</span>No orders yet.<br>Add one from the <strong>Add order</strong> tab.</div>';
+              ordersList.innerHTML = '<div class="orders-empty"><span class="emoji">📭</span>No orders yet.<br>Upload an Excel file from the <strong>Upload</strong> tab.</div>';
             }
           }, 250);
         } else {
@@ -1021,7 +1093,6 @@
 
         if (!r.ok) {
           showToast(j.error || 'Unable to change PIN', true);
-          // 403 = wrong current PIN (not a session issue) → clear current PIN field only
           if (r.status === 403) {
             clearPinGroup(currentPinInputs);
             currentPinInputs[0].focus();
@@ -1071,7 +1142,6 @@
 
         if (!r.ok) {
           showToast(j.error || 'Unable to change password', true);
-          // 403 = wrong current password (not a session issue) → clear current password field only
           if (r.status === 403) {
             currentPasswordInput.value = '';
             currentPasswordInput.focus();
@@ -1096,6 +1166,11 @@
     changePasswordBtn.addEventListener('click', changePassword);
 
     if (logoutBtn) logoutBtn.addEventListener('click', logout);
+
+    // Initial load of orders when remove tab is opened
+    if (document.getElementById('panel-remove').classList.contains('active')) {
+      loadOrders();
+    }
   </script>
 </body>
 </html>
